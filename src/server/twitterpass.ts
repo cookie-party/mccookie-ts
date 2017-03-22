@@ -2,15 +2,14 @@ import * as express from 'express';
 import * as Passport from 'passport';
 import {Strategy} from 'passport-twitter';
 import * as common from './ssr/common';
-
-const prefixURL = 'http://127.0.0.1:7777/api/v1';
+import {getLocation} from './config';
 
 export function TwitterPassport(router: express.Router) {
 
   Passport.use(new Strategy({
       consumerKey: process.env.CONSUMER_KEY,
       consumerSecret: process.env.CONSUMER_SECRET,
-      callbackURL: prefixURL+'/twitter/auth/callback',
+      callbackURL: getLocation()+'/api/v1'+'/twitter/auth/callback',
     },
     (token: string, token_secret: string, profile: Passport.Profile, done: (err: string, user: any)=>void) => {
       // console.log('twitter-passport auth ', profile); 

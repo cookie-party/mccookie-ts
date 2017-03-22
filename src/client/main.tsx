@@ -103,15 +103,17 @@ export default class Main extends React.Component<AppState, MainState>{
     };
 
     this.state.emitter.on('cookieRegister', (kv: KeyValueItem)=>{
-      /*
       const kvtext: string = kv.key + Constant.SEPARATOR + kv.value + Constant.SEPARATOR + Constant.HASHTAG;
       API.postTweet(kvtext)
-      .then((success: string)=>{
-        console.log('success',success);
+      .then((response: any)=>{
+        // console.log('response',response);
+        if(response && response.statusCode === 200) {
+          console.log('success!');
+          location.reload();
+        }
       }).catch((err: string)=>{
         console.log(err);
       });
-      */
     }).on('cookieSearch', (searchWord: string)=> {
       this.setState({searchWord});
     }).on('cookieItemDelete', (id: number)=> {
@@ -141,10 +143,10 @@ export default class Main extends React.Component<AppState, MainState>{
     //ユーザ情報取得
     this.setState({contents: 0});
     API.getCredentials()
-    .then((result: boolean)=>{
+    .then((response: {result: boolean, err: any})=>{
       // console.log('getCredentials',result);
-      if(!result){
-        throw result;
+      if(!response.result){
+        throw response.err;
       }
       return API.getUserTimeline();
     }).then((response: API.TweetInfo[])=>{
@@ -184,6 +186,7 @@ export default class Main extends React.Component<AppState, MainState>{
   handleLogout() {
     // this.props.onLogout(this.state.userId);
   }
+
   render() {
     const styles: common.Styles = {
       column: {

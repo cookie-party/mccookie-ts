@@ -8,8 +8,6 @@ const Twitter = require('twitter');
 
 import * as common from './ssr/common';
 
-const prefixURL = 'http://127.0.0.1:7777/api/v1';
-
 export function TwitterClient(router: express.Router) {
   let client = null; //TODO type
   let profile: Passport.Profile = null;
@@ -21,13 +19,18 @@ export function TwitterClient(router: express.Router) {
       //console.log('twitter/account/credentials session', oauthInfo);
       let oauthInfo: common.OauthInfo = passportSessionInfo.user;
       profile = oauthInfo.profile;
-      client = new Twitter({
-        consumer_key: process.env.CONSUMER_KEY,
-        consumer_secret: process.env.CONSUMER_SECRET,
-        access_token_key: oauthInfo.token,
-        access_token_secret: oauthInfo.token_secret,
-      });
-      res.send(JSON.stringify({result: true}));
+      let err = null;
+      try {
+        client = new Twitter({
+          consumer_key: process.env.CONSUMER_KEY,
+          consumer_secret: process.env.CONSUMER_SECRET,
+          access_token_key: oauthInfo.token,
+          access_token_secret: oauthInfo.token_secret,
+        });
+      } catch(e) {
+        err = e;
+      }
+      res.send(JSON.stringify({result: true, err: err}));
     }
     else {
       res.redirect('/');
@@ -52,5 +55,18 @@ export function TwitterClient(router: express.Router) {
       res.redirect('/');
     }
   });
-  
+
+  router.get('/twitter/statuses/update', (req, res, next)=>{
+    // console.log('twitter/post session', req.session);
+    if(req.query.text) {
+      client.post('statuses/update', {status: req.query.text},  (error: string, tweet: string, response) => {
+        if(error) throw error; 
+        res.send(JSON.stringify(response)); 
+      });
+    }
+    else {
+      res.send(JSON.stringify({statusCode: 400})); 
+    }
+  });
+
 }
