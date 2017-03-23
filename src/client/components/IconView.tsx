@@ -9,6 +9,7 @@ export interface IconViewProps {
 export interface IconViewState {
   hovering: boolean,
 }
+
 export default class IconView extends React.Component<IconViewProps, IconViewState>{
   constructor(props, state){
     super(props, state);

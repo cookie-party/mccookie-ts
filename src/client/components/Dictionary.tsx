@@ -15,6 +15,7 @@ export interface DictionaryState {
   meaning: string,
   cached: {}, //TODO 
 }
+
 export default class Dictionary extends React.Component<DictionaryProps, DictionaryState>{
   constructor(props, state){
     super(props, state);

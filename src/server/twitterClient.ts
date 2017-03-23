@@ -65,8 +65,30 @@ export function TwitterClient(router: express.Router) {
       });
     }
     else {
-      res.send(JSON.stringify({statusCode: 400})); 
+      res.statusCode = 400;
+      res.send(JSON.stringify(req.body)); 
     }
   });
+
+  router.get('/twitter/statuses/destroy', (req, res, next)=>{
+    // console.log('twitter/statuses/destroy', req.query);
+    if(req.query.id) {
+      const requrl = 'statuses/destroy/'+req.query.id+'.json';
+      client.post(requrl, {}, (error: string, tweet: string, response) => {
+        if(error) {
+          res.statusCode = 400;
+          res.send(JSON.stringify({err: error}));
+        }
+        else {
+          res.send(JSON.stringify(response)); 
+        } 
+      });
+    }
+    else {
+      res.statusCode = 400;
+      res.send(JSON.stringify(req.body)); 
+    }
+  });
+
 
 }

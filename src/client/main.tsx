@@ -44,7 +44,7 @@ import Constant from './constant';
 // import {UserInfo} from './app';
 
 export interface WordInfo {
-  id: number,
+  id: string,
   key: string, 
   value: string,
   userId: string,
@@ -84,7 +84,7 @@ export default class Main extends React.Component<AppState, MainState>{
       emitter,
       contents: -1,
       wordList: [{
-        id: 0,
+        id: '0',
         key: '覚えたい単語',
         value: '覚えたい意味',
         userId: null,
@@ -116,8 +116,7 @@ export default class Main extends React.Component<AppState, MainState>{
       });
     }).on('cookieSearch', (searchWord: string)=> {
       this.setState({searchWord});
-    }).on('cookieItemDelete', (id: number)=> {
-      /*
+    }).on('cookieItemDelete', (id: string)=> {
       //delete
       const wordlist: WordInfo[] = this.state.wordList;
       let deleteIdx: number = null;
@@ -131,10 +130,15 @@ export default class Main extends React.Component<AppState, MainState>{
           deleteDialogFlag: true,
           onDeleteItem: ()=>{
             wordlist.splice(deleteIdx, 1);
+            API.deleteItem(id).then(()=>{
+              this.setState({wordList: wordlist, deleteDialogFlag: false});
+            }).catch((err)=>{
+              alert(err);
+              this.setState({deleteDialogFlag: false});
+            });
           }
         });
       }
-      */
     });
 
   }
@@ -159,7 +163,7 @@ export default class Main extends React.Component<AppState, MainState>{
         .map((v)=>{
           const keyValues = v.text.split(Constant.SEPARATOR);
           return {
-            id: v.id,
+            id: v.id_str,
             key: keyValues[0],
             value: keyValues[1],
             userId: v.user.name,

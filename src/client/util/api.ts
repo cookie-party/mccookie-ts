@@ -46,6 +46,7 @@ export interface AppUserInfo {
 }
 export interface TweetInfo {
   id: number,
+  id_str: string,
   text: string,
   user: AppUserInfo,
   created_at: number,
@@ -68,6 +69,18 @@ export function postTweet(text) {
       .get(prefixurl+'twitter/statuses/update')
       .query({text: text})
       .end((err, res)=>{
+        sifting(err, res).then(resolve).catch(reject);
+      });
+  });
+}
+
+export function deleteItem(id: string) {
+  return new Promise((resolve, reject) => {
+    console.log('delete item');
+    request
+      .get(prefixurl+'twitter/statuses/destroy')
+      .query({id: id})
+      .end((err, res) => {
         sifting(err, res).then(resolve).catch(reject);
       });
   });

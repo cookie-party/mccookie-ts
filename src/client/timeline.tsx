@@ -3,6 +3,7 @@ import {TableRow} from './components/TableRow';
 
 import * as common from './common';
 import {MainState, WordInfo} from './main';
+
 export interface TimelineState {
 }
 export default class Timeline extends React.Component<MainState, TimelineState> {

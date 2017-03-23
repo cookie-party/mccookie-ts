@@ -41,6 +41,7 @@ const FlipAnimations = {
       }]
     ],
   }),
+
 };
 
 import {TableRowProps} from './TableRow';
@@ -50,6 +51,7 @@ export interface WordPaparState {
   keytouch: boolean,
   hovering: boolean,
 }
+
 export default class WordPaper extends React.Component<WordPaparProps, WordPaparState> {
   constructor(props, state){
     super(props, state);  
@@ -64,13 +66,13 @@ export default class WordPaper extends React.Component<WordPaparProps, WordPapar
     this.setState({hovering: !this.state.hovering});
   }
 
-  whenMouseEntered () {
-    this.setState({ hovering: true });
-  }
+  // whenMouseEntered () {
+  //   this.setState({ hovering: true });
+  // }
 
-  whenMouseLeft() {
-    this.setState({ hovering: false });
-  }
+  // whenMouseLeft() {
+  //   this.setState({ hovering: false });
+  // }
 
   render() {
     const styles = {
@@ -133,9 +135,7 @@ export default class WordPaper extends React.Component<WordPaparProps, WordPapar
 
     return (
       <VelocityComponent animation={flipAnimation}>
-      <div
-        onMouseEnter={this.whenMouseEntered.bind(this)}
-        onMouseLeave={this.whenMouseLeft.bind(this)}>
+      <div>
         <div onTouchTap={this.handleClicked.bind(this)} >
           <Paper style={styles.value} zDepth={2}>
             <div style={styles.itemView}>
@@ -147,5 +147,10 @@ export default class WordPaper extends React.Component<WordPaparProps, WordPapar
       </VelocityComponent>
     );
   }
+
+      // <div
+      //   onMouseEnter={this.whenMouseEntered.bind(this)}
+      //   onMouseLeave={this.whenMouseLeft.bind(this)}>
+
 
 }
