@@ -1,11 +1,114 @@
 import * as React from 'react';
+import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
-// import {authenticate} from './util/agent';
 import {Styles} from './common';
+import * as API from './util/api';
 
-export default class Auth extends React.Component<{}, {}>{
+import {UserProfile} from './app';
+export interface AuthProps {
+  fb: firebase.app.App,
+  tp: firebase.auth.TwitterAuthProvider,
+  onLogin: (profile: UserProfile)=>void,
+  onLogout: (userId: string)=>void,
+}
+export interface AuthState {
+  email: string,
+  password: string,
+}
+
+export default class Auth extends React.Component<AuthProps, AuthState>{
   constructor(props, state){
     super(props, state);
+
+    this.state = {
+      email: '',
+      password: '',
+    }
+  }
+
+  onChangeEmail(e) {
+    this.setState({email: e.target.value});
+  }
+  onChangePassword(e) {
+    this.setState({password: e.target.value});
+  }
+
+  onUseWithoutLogin() {
+    this.authenticate({
+      email: 'mccookie0120@gmail.com',
+      password: 'exsample',
+    })
+  }
+
+  userInfoToProfileInfo(cUser: firebase.UserInfo): UserProfile {
+    return {
+      provider: cUser.providerId,
+      id: cUser.uid,
+      displayName: cUser.displayName,
+      photoURL: cUser.photoURL,
+    }
+  }
+
+  authenticate(user?: {email: string, password: string}) {
+    let authEmail: string, authPass: string;
+
+    if(user && user.email && user.password) {
+      authEmail = user.email;
+      authPass = user.password;
+    }
+    else {
+      authEmail = this.state.email;
+      authPass = this.state.password;
+    }
+
+    const firebase: firebase.app.App = this.props.fb;
+    // 既存ユーザーのログイン機能
+    firebase.auth().signInWithEmailAndPassword(authEmail, authPass)
+    .then((ret)=>{
+      //console.log('logined '+JSON.stringify(ret));
+      const cUser: firebase.UserInfo = firebase.auth().currentUser;
+      this.props.onLogin(this.userInfoToProfileInfo(cUser));
+    })
+    .catch((error) => {
+      alert('loginできません（' + error.message + '）');
+    });  
+  }
+
+  register() {
+    //console.log('register '+this.state.email+' '+this.state.password);
+    const firebase: firebase.app.App = this.props.fb;
+    // 新規ユーザーを登録
+    firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password)
+    .then((result) => {
+      const cUser: firebase.UserInfo = firebase.auth().currentUser;
+      this.props.onLogin(this.userInfoToProfileInfo(cUser));
+    })
+    .catch((error) => {
+      alert('登録できません（' + error.message + '）');
+    });
+  }
+
+  twitterAuth() {
+    //console.log('twitterAuth');
+    this.props.tp.setCustomParameters({
+      'lang': 'ja'
+    });
+    this.props.fb.auth().signInWithPopup(this.props.tp)
+    .then((result)=> {
+      const token = result.credential.accessToken;
+      const secret = result.credential.secret;
+      const cUser = result.user.providerData.length >= 0? result.user.providerData[0] : result.user;
+      return API.twitterAuthenticate(this.userInfoToProfileInfo(cUser), token, secret);
+    }).then((response: {result: boolean, error: any, profile: UserProfile})=>{
+      if(response.result) {
+        this.props.onLogin(response.profile);
+      }
+      else{
+        alert(response.error);
+      }
+    }).catch((error)=> {
+      console.log('login failed ', error);
+    });
   }
 
   render() {
@@ -29,10 +132,32 @@ export default class Auth extends React.Component<{}, {}>{
       <div id="authArea">
         <div style={styles.row}>
           <div style={styles.column}>
-            <a href='/api/v1/twitter/auth'>Login</a>
+            <div>
+              <TextField
+                hintText="メールアドレス"
+                onChange={this.onChangeEmail.bind(this)}
+              />
+            </div>
+            <div>
+              <TextField
+                hintText="Password Field"
+                floatingLabelText="Password"
+                type="password"
+                onChange={this.onChangePassword.bind(this)}
+                />
+            </div>
+            <div>
+              <RaisedButton label="ログイン" primary={true} onClick={this.authenticate.bind(this)} />
+              <RaisedButton label="新規登録" primary={false} onClick={this.register.bind(this)} />
+              <br/>
+              <RaisedButton label="Twitterでログインする" primary={false} onClick={this.twitterAuth.bind(this)} />
+              <br/>
+              <a style = {{cursor: 'pointer'}} onClick={this.onUseWithoutLogin.bind(this)}>Loginせずに使う</a>
+            </div>
           </div>
         </div>
       </div>
+
     );
   }
 }

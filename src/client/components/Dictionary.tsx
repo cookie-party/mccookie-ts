@@ -51,19 +51,19 @@ export default class Dictionary extends React.Component<DictionaryProps, Diction
     if(!searchWord) { return; }
 
     if(this.state.cached[searchWord]){
-      this.setState({meaning: this.state.cached[searchWord], searching: false});
+      this.setState({means: this.state.cached[searchWord], searching: false});
     } else {
       this.setState({searching: true});
       ejdic(searchWord)
       .then((response: {result: boolean, meaning: string})=>{
         let means: string[] = [''];
+        const cached = this.state.cached;
         if(response.result) {
           means = this.cutMeans(response.meaning);
-          const cached = this.state.cached;
           cached[searchWord] = means;
           this.props.onSearched({target:{value: means[0]}});
         }
-        this.setState({means: means, meaning: means[0], meaningsAll: response.meaning, cached: means, searching: false});
+        this.setState({means: means, meaning: means[0], meaningsAll: response.meaning, cached, searching: false});
       }).catch((err)=>{
         // console.log(err);
         this.setState({meaning: null, means: [], searching: false});
@@ -115,7 +115,7 @@ export default class Dictionary extends React.Component<DictionaryProps, Diction
         label="Copy"
         primary={true}
         onTouchTap={()=>{
-          this.props.onClickCopy({target:{value:this.state.meaning[0]}});
+          this.props.onClickCopy({target:{value:this.state.meaning}});
           this.props.onClose();
         }}
       />,

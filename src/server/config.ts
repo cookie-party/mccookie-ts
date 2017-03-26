@@ -5,3 +5,7 @@ export function getLocation() {
   // console.log(protocol + '://' + host + ':' + port);
   return protocol + '://' + host + ':' + port;
 }
+
+export const Constant = {
+  HASHTAG: '#くーこれ'
+}

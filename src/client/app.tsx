@@ -3,11 +3,11 @@ declare var window: any;
 import * as React from 'react';
 import * as RRM from 'react-responsive-mixin';
 
-// import firebase from 'firebase';
+import * as firebase from 'firebase';
 // import cookie from 'react-cookie';
 
-//import config from './config/config';
-import * as Passport from 'passport';
+// import config from './config/config';
+// import * as Passport from 'passport';
 import {Styles} from './common';
 
 import Main from './main';
@@ -26,41 +26,49 @@ const Profile = window ? window.APP_OAUTH : {};
 //   tokenSecret: string,
 // }
 
+export interface UserProfile {
+  provider: string,
+  id: string;
+  displayName: string;
+  photoURL: string;
+}
+
 export interface AppState {
+  fb: firebase.app.App,
+  tp: firebase.auth.TwitterAuthProvider,
   maxHeight: number|string,
-  profile: Passport.Profile,
-  // userInfo: UserInfo,
-  // onLogin: (userId: string) => void,
-  // onLogout: (userId: string) => void,
+  profile: UserProfile,
+  onLogin: (userProfile: UserProfile) => void,
+  onLogout: (userId: string) => void,
 }
 
 export default class App extends React.Component<{}, AppState>{
   constructor(props: React.Props<{}>, state: AppState){
     super(props, state);
 
-    /*
     const fconf = {
       apiKey: env.apiKey,
       authDomain: env.authDomain,
       databaseURL: env.databaseURL,
       storageBucket: env.storageBucket,
-      messagingSenderId: env.messagingSenderId
+      messagingSenderId: env.messagingSenderId,
     };
-    */
-    // const fbapp = firebase.initializeApp(fconf);
+    const fbapp: firebase.app.App = firebase.initializeApp(fconf);
+    const tp = new firebase.auth.TwitterAuthProvider();
 
     this.state = {
-      // fb: fbapp,
+      fb: fbapp,
+      tp,
       // config: fconf,
       maxHeight: '100%',
       profile: null,
-      // onLogin: this.onLogin.bind(this),
-      // onLogout: this.onLogout.bind(this)
+      onLogin: this.onLogin.bind(this),
+      onLogout: this.onLogout.bind(this)
     };
   }
 
   componentWillMount() {
-    console.log('userInfo: ', Profile);
+    // console.log('userInfo: ', Profile);
     if(Profile) {
       // const oauth = Oauth.user;
       // if(oauth.token && oauth.token_secret) {
@@ -88,18 +96,18 @@ export default class App extends React.Component<{}, AppState>{
     });
   }
 
-  // onLogin (userId) {
-  //   //console.log('onLogin', uid);
-  //   this.setState({userId: userId});
-  //   //cookie.save('userId', userId, { path: '/' });
-  // }
+  onLogin (profile: UserProfile) {
+    //console.log('onLogin', uid);
+    this.setState({profile});
+    //cookie.save('userId', userId, { path: '/' });
+  }
 
-  // onLogout(uid) {
-  //   //console.log('onLogout');
-  //   //this.state.fb.auth().signOut();
-  //   this.setState({userId: null});
-  //   //cookie.remove('userId', { path: '/' });
-  // }
+  onLogout(userId: string) {
+    //console.log('onLogout');
+    this.state.fb.auth().signOut();
+    this.setState({profile: null});
+    //cookie.remove('userId', { path: '/' });
+  }
 
   render() {
     const styles: Styles = {

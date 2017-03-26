@@ -3,8 +3,8 @@ export const router: express.Router = express.Router();
 
 require('dotenv').config();
 
-import {TwitterPassport} from './twitterpass';
-TwitterPassport(router);
+// import {TwitterPassport} from './twitterpass';
+// TwitterPassport(router);
 
 import {TwitterClient} from './twitterClient';
 TwitterClient(router);

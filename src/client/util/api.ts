@@ -2,7 +2,7 @@ import * as request from 'superagent';
 import config from '../config/config';
 
 import {toJSON} from './utility';
-import * as Passport from 'passport';
+// import * as Passport from 'passport';
 
 const host = config.HOST || 'localhost';
 const port = config.PORT? ':'+config.PORT:'';
@@ -25,6 +25,17 @@ function sifting(err: string, res: request.Response): Promise<{}> {
         reject('failed to JSONize');
       }
     }
+  });
+}
+
+export function twitterAuthenticate(profile, token, secret) {
+  return new Promise((resolve, reject) => {
+    request
+      .get(prefixurl+'twitter/authenticate')
+      .query({profile: profile, token: token, secret: secret})
+      .end((err: string, res: request.Response)=>{
+        sifting(err, res).then(resolve).catch(reject);
+      });
   });
 }
 

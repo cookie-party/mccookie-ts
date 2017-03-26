@@ -85,11 +85,11 @@ export class TableRow extends React.Component<TableRowProps, any> {
       }, 
     };
 
-    const item = this.props.item;
+    const item: WordInfo = this.props.item;
 
     const icon = item.icon || '../../static/img/satomi.jpg';
-    const username = item.userId || 'satomi';
-    const userid = item.userName || '@satomi';
+    const username = item.userName || 'satomi';
+    const userid = '@'+item.userId || '@satomi';
 
     let time = '';
     const now = moment();

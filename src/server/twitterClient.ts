@@ -1,6 +1,7 @@
 import * as express from 'express';
-import * as Passport from 'passport';
-import {Strategy} from 'passport-twitter';
+// import * as Passport from 'passport';
+// import {Strategy} from 'passport-twitter';
+import {Constant} from './config';
 
 //import * as twttr from 'twitter';
 //TODO twitter のimportが使えへん
@@ -10,14 +11,34 @@ import * as common from './ssr/common';
 
 export function TwitterClient(router: express.Router) {
   let client = null; //TODO type
-  let profile: Passport.Profile = null;
+  let profile: any = null;
+
+  router.get('/twitter/authenticate', (req, res, next) => {
+    const sess = req.session;
+    sess.view = sess.view? sess.view++ : 1;
+
+    profile = req.query.profile;
+    const token = req.query.token;
+    const token_secret = req.query.secret;
+
+    const oauth: common.OauthInfo = {
+      token: token,
+      token_secret: token_secret,
+      profile: profile,
+    }
+
+    sess.oauth = oauth;
+    sess.save(()=>{
+      // console.log('sess saved', req.session);
+      res.send(JSON.stringify({result: true, profile: profile, error: null}));
+    });
+
+  });
 
   router.get('/twitter/account/credentials', (req, res, next)=>{
-    // console.log('credentials ', req.session.passport);
-    const passportSessionInfo: common.PassportSessionInfo = req.session.passport;
-    if(passportSessionInfo && passportSessionInfo.user) {
-      //console.log('twitter/account/credentials session', oauthInfo);
-      let oauthInfo: common.OauthInfo = passportSessionInfo.user;
+    if(req.session && req.session.oauth) {
+      // console.log('twitter/account/credentials session', req.session.oauth);
+      let oauthInfo: common.OauthInfo = req.session.oauth;
       profile = oauthInfo.profile;
       let err = null;
       try {
@@ -30,6 +51,18 @@ export function TwitterClient(router: express.Router) {
       } catch(e) {
         err = e;
       }
+
+      // TODO streaming
+      // You can also get the stream in a callback if you prefer.
+      client.stream('statuses/filter', {track: Constant.HASHTAG}, (stream) => {
+        stream.on('data', (event) => {
+          console.log(event && event.text);
+        });
+        stream.on('error', (error) => {
+          console.log(error);
+        });
+      });
+
       res.send(JSON.stringify({result: true, err: err}));
     }
     else {

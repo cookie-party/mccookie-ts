@@ -2,9 +2,9 @@ import * as express from 'express';
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
 import * as common from './common';
-import * as Passport from 'passport';
+// import * as Passport from 'passport';
 
-const renderFullPage = (config, profile: Passport.Profile) => {
+const renderFullPage = (config, profile: any) => {
   //console.log('session',session);
   return `
     <!DOCTYPE html>
@@ -34,7 +34,7 @@ const renderFullPage = (config, profile: Passport.Profile) => {
 };
 
 export const serverSideRendering = (res: express.Response, config: any, passportSessionInfo: common.PassportSessionInfo)=>{
-  let profile: Passport.Profile = null;
+  let profile: any = null;
   if(passportSessionInfo && passportSessionInfo.user) {
     profile = passportSessionInfo.user.profile; //認証済みならprofileが入る
   }

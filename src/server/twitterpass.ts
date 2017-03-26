@@ -1,3 +1,4 @@
+/*
 import * as express from 'express';
 import * as Passport from 'passport';
 import {Strategy} from 'passport-twitter';
@@ -33,14 +34,7 @@ export function TwitterPassport(router: express.Router) {
     done(null, user);
   });
 
-  /**
-   * /twitter/auth 認証
-   */
   router.get('/twitter/auth', Passport.authenticate('twitter'));
-
-  /**
-   * /twitter/auth 認証コールバック
-   */
   router.get('/twitter/auth/callback', Passport.authenticate('twitter', {
     failureRedirect: '/' }), //認証失敗時のリダイレクト先を書く
     (req, res) => {
@@ -52,3 +46,5 @@ export function TwitterPassport(router: express.Router) {
   );
 
 }
+
+*/

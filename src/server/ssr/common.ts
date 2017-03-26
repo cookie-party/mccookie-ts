@@ -1,10 +1,10 @@
-import * as Passport from 'passport';
+// import * as Passport from 'passport';
 
 /**
  * 認証済み情報
  */
 export interface OauthInfo {
-  profile: Passport.Profile,
+  profile: any,
   token: string,
   token_secret: string,
 }

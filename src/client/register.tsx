@@ -73,7 +73,7 @@ export default class Register extends React.Component<MainState, RegisterState> 
     if(keyValue.length > 130) {
       errorflag = true;
     }
-    this.setState({value: value, errorflag});
+    this.setState({value, errorflag});
   }
   onClickRegister(e){
     this.setState({key: '', value: '', focused: false});
@@ -124,7 +124,7 @@ export default class Register extends React.Component<MainState, RegisterState> 
     };
 
     //const icon = this.props.profile.icon || '../img/satomi.jpg';
-    const icon: string = this.props.profile.photos.length >= 0 ? this.props.profile.photos[0].value : null;
+    const icon: string = this.props.profile.photoURL;
 
     const wordInput = (
       <div style={styles.row}
