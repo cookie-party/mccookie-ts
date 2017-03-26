@@ -64,7 +64,7 @@ export function getUserTimeline() {
 
 export function postTweet(text) {
   return new Promise((resolve, reject)=>{
-    console.log('postTweet',text);
+    //console.log('postTweet',text);
     request
       .get(prefixurl+'twitter/statuses/update')
       .query({text: text})
@@ -76,7 +76,7 @@ export function postTweet(text) {
 
 export function deleteItem(id: string) {
   return new Promise((resolve, reject) => {
-    console.log('delete item');
+    //console.log('delete item');
     request
       .get(prefixurl+'twitter/statuses/destroy')
       .query({id: id})
@@ -86,12 +86,11 @@ export function deleteItem(id: string) {
   });
 }
 
-export function query(target: string, id?: number|string, column?: string) {
+export function ejdic(key: string) {
   return new Promise((resolve, reject)=>{
-    const query = column? {id: id, column: column} : {id: id};
     request
-      .get(prefixurl+target)
-      .query(query)
+      .get(prefixurl+'/ejdic')
+      .query({key})
       .end((err: string, res: request.Response) => {
         sifting(err, res).then(resolve).catch(reject);
       });

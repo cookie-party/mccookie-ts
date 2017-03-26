@@ -11,12 +11,12 @@ TwitterClient(router);
 
 import dictionary from './ref/ejdic';
 
-/* GET Dictionary. */
+// GET Dictionary. 
 router.get('/ejdic', (req, res, next) => {
   let meaning = {result: false, meaning: 'undefined'};
   //TODO 高速化
   dictionary.forEach((item)=>{
-    if(item.word === req.query.id){
+    if(item.word === req.query.key){
       meaning = {result: true, meaning: item.meaning};
     }
   });

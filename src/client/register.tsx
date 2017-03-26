@@ -149,7 +149,8 @@ export default class Register extends React.Component<MainState, RegisterState> 
            searchKey={this.state.key}
            flag={this.state.openDictionary}
            onClose={this.onDictionary.bind(this)} 
-           onDictionary={this.onChangeValue.bind(this)}/>
+           onSearched={this.onChangeValue.bind(this)}
+           onClickCopy={this.onChangeValue.bind(this)}/>
         </div>
       </div>
     );
