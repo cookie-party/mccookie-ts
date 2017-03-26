@@ -125,7 +125,7 @@ export default class Main extends React.Component<AppState, MainState>{
           deleteIdx = i;
         }
       });
-      if(deleteIdx){
+      if(typeof deleteIdx === 'number'){
         this.setState({
           deleteDialogFlag: true,
           onDeleteItem: ()=>{

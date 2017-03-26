@@ -38,7 +38,7 @@ export class TableRow extends React.Component<TableRowProps, any> {
   }
 
   onDelete() {
-    console.log('onDelete');
+    console.log('onDelete', this.props.item);
     this.props.emitter.emit('cookieItemDelete', this.props.item.id);
   }
 
