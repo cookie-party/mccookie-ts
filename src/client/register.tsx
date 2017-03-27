@@ -23,6 +23,7 @@ export interface RegisterState {
   errorflag: boolean,
   errorText: string,
 }
+
 export default class Register extends React.Component<MainState, RegisterState> {
   constructor(props: MainState, state){
     super(props, state);  

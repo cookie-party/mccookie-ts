@@ -5,7 +5,6 @@ const parser = require("body-parser");
 // import * as cfg from './config';
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
-// import * as Passport from 'passport';
 //サーバーサイドレンダリング
 const server_1 = require("./ssr/server");
 const error_1 = require("./ssr/error");
@@ -25,8 +24,6 @@ app.use(logger);
 app.use(parser.json());
 app.use(parser.urlencoded({ extended: false }));
 app.use(cookieParser());
-// app.use(Passport.initialize());
-// app.use(Passport.session());
 app.use(session({
     secret: 'keyboard cat',
     resave: true,
@@ -41,8 +38,8 @@ app.use('/build', express.static(buildDir));
 app.use('/', (req, res, next) => {
     if (req.url === '/') {
         const config = process.env;
-        const passportSessionInfo = req.session.passport;
-        server_1.serverSideRendering(res, config, passportSessionInfo);
+        const oathInfo = req.session.oauth;
+        server_1.serverSideRendering(res, config, oathInfo);
     }
     else {
         const err = new Error('Not Found');

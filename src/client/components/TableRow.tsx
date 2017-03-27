@@ -9,7 +9,7 @@ import DeleteIcon from 'material-ui/svg-icons/action/delete';
 import IconView from './IconView';
 import WordPaper from './WordPaper';
 
-import {WordInfo} from '../main';
+import {WordInfo} from '../common';
 import {EventEmitter} from 'eventemitter3';
 
 import * as moment from 'moment';

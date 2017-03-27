@@ -11,3 +11,32 @@ export interface Styles {
   smallIcon?: React.CSSProperties,
 }
 
+export interface OauthInfo {
+  profile: any,
+  token: string,
+  token_secret: string,
+}
+
+export interface UserProfile {
+  provider: string,
+  id: string;
+  displayName: string;
+  photoURL: string;
+}
+
+export interface WordInfo {
+  id: string,
+  key: string, 
+  value: string,
+  userId: string,
+  userName: string,
+  icon: string,
+  createDate: number,
+  updateDate: number,
+}
+
+export interface KeyValueItem {
+  key: string,
+  value: string,
+}
+

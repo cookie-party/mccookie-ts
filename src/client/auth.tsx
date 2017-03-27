@@ -1,10 +1,9 @@
 import * as React from 'react';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
-import {Styles} from './common';
+import {UserProfile, Styles} from './common';
 import * as API from './util/api';
 
-import {UserProfile} from './app';
 export interface AuthProps {
   fb: firebase.app.App,
   tp: firebase.auth.TwitterAuthProvider,

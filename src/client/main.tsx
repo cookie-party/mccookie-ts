@@ -10,7 +10,6 @@ import * as injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 
 import {EventEmitter} from 'eventemitter3';
-// import * as Passport from 'passport';
 
 import IconButton from 'material-ui/IconButton';
 import IconMenu from 'material-ui/IconMenu';
@@ -23,11 +22,6 @@ import CircularProgress from 'material-ui/CircularProgress';
 
 import * as API from './util/api';
 
-// import {getUserData} from './util/dbUtil';
-// import {query, post} from './util/agent';
-// import {getTweets, getUsers, getCredentials, getTimeline,
-//   postTweet,getUserTimeline} from './util/agent';
-
 // import MyProfile from './myprof';
 // import AddMylistDialog from './components/AddMylistDialog';
 // import MyList from './mylist';
@@ -38,26 +32,9 @@ import Timeline from './timeline';
 import SearchBox from './components/SearchBox';
 import DialogBox from './components/DialogBox';
 
-import {AppState, UserProfile} from './app';
-import * as common from './common';
+import {AppState} from './app';
+import {WordInfo, KeyValueItem, UserProfile, Styles} from './common';
 import Constant from './constant';
-// import {UserInfo} from './app';
-
-export interface WordInfo {
-  id: string,
-  key: string, 
-  value: string,
-  userId: string,
-  userName: string,
-  icon: string,
-  createDate: number,
-  updateDate: number,
-}
-
-export interface KeyValueItem {
-  key: string,
-  value: string,
-}
 
 export interface MainState {
   emitter: EventEmitter,
@@ -76,7 +53,6 @@ export default class Main extends React.Component<AppState, MainState>{
   constructor(props: AppState, state: MainState){
     super(props, state);
     const emitter: EventEmitter = new EventEmitter();
-    // this.userId = this.props.userId;
     // window.userId = this.userId; //TODO windowに入れない方がいいような気もする
     // window.userInfo = this.props.profile;
 
@@ -218,14 +194,8 @@ export default class Main extends React.Component<AppState, MainState>{
 
       //ユーザ情報取得
       if(this.state.profile.provider === 'twitter.com') {
-        API.getCredentials()
-        .then((response: {result: boolean, err: any})=>{
-          // console.log('getCredentials',result);
-          if(!response.result){
-            throw response.err;
-          }
-          return API.getUserTimeline();
-        }).then((response: API.TweetInfo[])=>{
+        API.getUserTimeline()
+        .then((response: API.TweetInfo[])=>{
           if(response){
             const preWordList: WordInfo[] = this.state.wordList;
             const nextWordList: WordInfo[] = response
@@ -293,7 +263,7 @@ export default class Main extends React.Component<AppState, MainState>{
   }
 
   render() {
-    const styles: common.Styles = {
+    const styles: Styles = {
       column: {
         display: 'flex',
         flexDirection: 'column',

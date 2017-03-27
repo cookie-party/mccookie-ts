@@ -2,7 +2,6 @@ import * as request from 'superagent';
 import config from '../config/config';
 
 import {toJSON} from './utility';
-// import * as Passport from 'passport';
 
 const host = config.HOST || 'localhost';
 const port = config.PORT? ':'+config.PORT:'';
@@ -34,17 +33,6 @@ export function twitterAuthenticate(profile, token, secret) {
       .get(prefixurl+'twitter/authenticate')
       .query({profile: profile, token: token, secret: secret})
       .end((err: string, res: request.Response)=>{
-        sifting(err, res).then(resolve).catch(reject);
-      });
-  });
-}
-
-export function getCredentials() {
-  return new Promise((resolve, reject)=>{
-    request
-      .get(prefixurl+'twitter/account/credentials')
-      .end((err: string, res: request.Response)=>{
-        //console.log('/twitter/account/credentials', res);
         sifting(err, res).then(resolve).catch(reject);
       });
   });

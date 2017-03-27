@@ -1,8 +1,8 @@
 import * as React from 'react';
 import {TableRow} from './components/TableRow';
 
-import * as common from './common';
-import {MainState, WordInfo} from './main';
+import {WordInfo, Styles} from './common';
+import {MainState} from './main';
 
 export interface TimelineState {
 }
@@ -12,7 +12,7 @@ export default class Timeline extends React.Component<MainState, TimelineState> 
   }
 
   render(){
-    const styles: common.Styles = {
+    const styles: Styles = {
       main: {
         display: 'flex',
         justifyContent: 'space-between',
