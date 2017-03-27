@@ -1,8 +1,7 @@
 import * as express from 'express';
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
-import * as common from './common';
-// import * as Passport from 'passport';
+import {UserProfile, OauthInfo} from './common';
 
 const renderFullPage = (config, profile: any) => {
   //console.log('session',session);
@@ -33,10 +32,10 @@ const renderFullPage = (config, profile: any) => {
     `;
 };
 
-export const serverSideRendering = (res: express.Response, config: any, passportSessionInfo: common.PassportSessionInfo)=>{
-  let profile: any = null;
-  if(passportSessionInfo && passportSessionInfo.user) {
-    profile = passportSessionInfo.user.profile; //認証済みならprofileが入る
+export const serverSideRendering = (res: express.Response, config: any, oauthInfo: OauthInfo)=>{
+  let profile: UserProfile = null;
+  if(oauthInfo) {
+    profile = oauthInfo.profile; //認証済みならprofileが入る
   }
   const renderedPage = renderFullPage(config, profile);
   res.status(200).send(renderedPage);

@@ -4,12 +4,9 @@ import * as React from 'react';
 import * as RRM from 'react-responsive-mixin';
 
 import * as firebase from 'firebase';
-// import cookie from 'react-cookie';
+import cookie from 'react-cookie';
 
-// import config from './config/config';
-// import * as Passport from 'passport';
-import {Styles} from './common';
-
+import {UserProfile, Styles} from './common';
 import Main from './main';
 import Auth from './auth';
 
@@ -17,21 +14,6 @@ const env = window ? window.APP_PROPS : {};
 
 //認証済みならAPP_OAUTHに値が入る
 const Profile = window ? window.APP_OAUTH : {};
-
-// export interface UserInfo {
-//   userId: string,
-//   icon: string,
-//   profile: any,
-//   token: string,
-//   tokenSecret: string,
-// }
-
-export interface UserProfile {
-  provider: string,
-  id: string;
-  displayName: string;
-  photoURL: string;
-}
 
 export interface AppState {
   fb: firebase.app.App,
@@ -69,18 +51,15 @@ export default class App extends React.Component<{}, AppState>{
 
   componentWillMount() {
     // console.log('userInfo: ', Profile);
+    let profile: UserProfile = null;
     if(Profile) {
-      // const oauth = Oauth.user;
-      // if(oauth.token && oauth.token_secret) {
-      //   const icon: string = oauth.profile.photos.length >= 0 ? oauth.profile.photos[0].value : null;
-      //   const userInfo: UserInfo = Object.assign(oauth, {
-      //     userId: oauth.profile.id,
-      //     icon,
-      //   });
-      //   this.setState({ userInfo });
-      // }
-      this.setState({profile: Profile})
+      profile = Profile;
     }
+    else {
+      profile = cookie.load('profile');
+    }
+    // console.log('componentWillMount', profile);
+    this.setState({profile});
   }
 
   componentDidMount() {
@@ -99,14 +78,14 @@ export default class App extends React.Component<{}, AppState>{
   onLogin (profile: UserProfile) {
     //console.log('onLogin', uid);
     this.setState({profile});
-    //cookie.save('userId', userId, { path: '/' });
+    cookie.save('profile', profile, { path: '/' });
   }
 
   onLogout(userId: string) {
     //console.log('onLogout');
     this.state.fb.auth().signOut();
     this.setState({profile: null});
-    //cookie.remove('userId', { path: '/' });
+    cookie.remove('profile', { path: '/' });
   }
 
   render() {

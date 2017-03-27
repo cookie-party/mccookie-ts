@@ -1,5 +1,3 @@
-// import * as Passport from 'passport';
-
 /**
  * 認証済み情報
  */
@@ -8,10 +6,13 @@ export interface OauthInfo {
   token: string,
   token_secret: string,
 }
-export interface PassportSessionInfo {
-  user: OauthInfo,
-}
 
+export interface UserProfile {
+  provider: string,
+  id: string;
+  displayName: string;
+  photoURL: string;
+}
 
 /**
  * エラー状態
