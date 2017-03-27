@@ -79,6 +79,26 @@ export function TwitterClient(router: express.Router) {
     }
   });
 
+  router.get('/twitter/statuses/homeTimeline', (req, res, next)=>{
+    // console.log('twitter/statuses/userTimeline session', req.session);
+    if(checkTwitterClient(req)) {
+      const params = {/*TODO*/};
+      client.get('statuses/home_timeline', params, (error: string, tweets: string, response) => {
+        if (!error) {
+          res.send(JSON.stringify(tweets));
+        }
+        else {
+          res.statusCode = 401;
+          res.send(JSON.stringify(error)); 
+        }
+      });
+    }
+    else {
+      res.statusCode = 400;
+      res.send(JSON.stringify(req.body)); 
+    }
+  });
+
   router.get('/twitter/statuses/update', (req, res, next)=>{
     // console.log('twitter/post session', req.session);
     if(checkTwitterClient(req) && req.query.text) {

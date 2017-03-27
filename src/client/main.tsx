@@ -19,6 +19,9 @@ import FaceIcon from 'material-ui/svg-icons/action/face';
 import FolderIcon from 'material-ui/svg-icons/file/folder';
 import Paper from 'material-ui/Paper';
 import CircularProgress from 'material-ui/CircularProgress';
+import {Tabs, Tab} from 'material-ui/Tabs';
+import HomeIcon from 'material-ui/svg-icons/action/home';
+import PersonIcon from 'material-ui/svg-icons/social/person';
 
 import * as API from './util/api';
 
@@ -116,6 +119,7 @@ export default class Main extends React.Component<AppState, MainState>{
       }
 
     }).on('cookieSearch', (searchWord: string)=> {
+      //TODO
       this.setState({searchWord});
 
     }).on('cookieItemDelete', (id: string)=> {
@@ -178,6 +182,7 @@ export default class Main extends React.Component<AppState, MainState>{
     //mccookite db data
     const mcctestRef: firebase.database.Reference = fbDB.ref('users/mcctest');
     mcctestRef.once('value', (snapshot) => {
+      //デフォルト全員用データの表示
       const values: any = snapshot.val();
       if(values) {
         const vKeyids: string[] = Object.keys(values);
@@ -185,16 +190,14 @@ export default class Main extends React.Component<AppState, MainState>{
         const nextWordList: WordInfo[] = vKeyids.map((keyid) => {
           return values[keyid];
         });
-
         wordList = preWordList.concat(nextWordList)
         .sort((w1: WordInfo, w2: WordInfo)=>w2.updateDate - w1.updateDate);
-
         this.setState({wordList: wordList});
       }
 
-      //ユーザ情報取得
+      //タイムライン取得
       if(this.state.profile.provider === 'twitter.com') {
-        API.getUserTimeline()
+        API.getHomeTimeline()
         .then((response: API.TweetInfo[])=>{
           if(response){
             const preWordList: WordInfo[] = this.state.wordList;
@@ -224,7 +227,7 @@ export default class Main extends React.Component<AppState, MainState>{
         });
 
       } else if(this.state.profile.provider === 'firebase') {
-        //TODO my wordlist
+        //TODO Home Timeline
         const mcctestRef: firebase.database.Reference = fbDB.ref('users/' + this.state.profile.id);
         mcctestRef.on('value', (snapshot) => {
           const values: any = snapshot.val();
@@ -357,7 +360,14 @@ export default class Main extends React.Component<AppState, MainState>{
             <Register {...this.state}/>
           </div>
           <div style={styles.timeline}>
-            <Timeline {...this.state}/>
+            <Tabs inkBarStyle={{background: 'white'}}>
+              <Tab icon={<HomeIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+                <Timeline {...this.state}/>
+              </Tab>
+              <Tab icon={<PersonIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+                <Timeline {...this.state}/>
+              </Tab>
+            </Tabs>
           </div>
         </div>
       );
