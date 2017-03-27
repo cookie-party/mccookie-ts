@@ -20,7 +20,7 @@ const logger = (req, res, next) => {
     console.log("REQ:" + req.url);
     next();
 };
-const PORT = process.env.port || 7777;
+const PORT = process.env.PORT || 7777;
 app.use(logger);
 app.use(parser.json());
 app.use(parser.urlencoded({ extended: false }));

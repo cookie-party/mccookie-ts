@@ -25,7 +25,7 @@ const logger = ( req: express.Request, res: express.Response, next: express.Next
     next();
 };
 
-const PORT: number = process.env.port || 7777;
+const PORT: number = process.env.PORT || 7777;
 
 app.use(logger);
 app.use(parser.json());
