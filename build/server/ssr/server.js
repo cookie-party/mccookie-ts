@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// import * as Passport from 'passport';
 const renderFullPage = (config, profile) => {
     //console.log('session',session);
     return `
@@ -29,10 +28,10 @@ const renderFullPage = (config, profile) => {
       </html>
     `;
 };
-exports.serverSideRendering = (res, config, passportSessionInfo) => {
+exports.serverSideRendering = (res, config, oauthInfo) => {
     let profile = null;
-    if (passportSessionInfo && passportSessionInfo.user) {
-        profile = passportSessionInfo.user.profile; //認証済みならprofileが入る
+    if (oauthInfo) {
+        profile = oauthInfo.profile; //認証済みならprofileが入る
     }
     const renderedPage = renderFullPage(config, profile);
     res.status(200).send(renderedPage);

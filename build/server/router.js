@@ -3,8 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
 exports.router = express.Router();
 require('dotenv').config();
-// import {TwitterPassport} from './twitterpass';
-// TwitterPassport(router);
 const twitterClient_1 = require("./twitterClient");
 twitterClient_1.TwitterClient(exports.router);
 const ejdic_1 = require("./ref/ejdic");
