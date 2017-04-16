@@ -10,7 +10,7 @@ export default class SeachBox extends React.Component<MainState, SearchBoxState>
   }
 
   onChangeSearchWord(e) {
-    this.props.emitter.emit('cookieSearch', e.target.value);
+    // this.props.emitter.emit('cookieSearch', e.target.value);
   }
 
   render() {

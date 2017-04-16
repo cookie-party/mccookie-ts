@@ -2,6 +2,10 @@ import * as React from 'react';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
+import {connect} from 'react-redux';
+import {Dispatch} from 'redux';
+import {registerItem} from './redux/wordListAction';
+
 import SchoolIcon from 'material-ui/svg-icons/social/school';
 import AddPhotoIcon from 'material-ui/svg-icons/image/add-a-photo';
 import LabelOutlineIcon from 'material-ui/svg-icons/action/label-outline';
@@ -24,8 +28,12 @@ export interface RegisterState {
   errorText: string,
 }
 
-export default class Register extends React.Component<MainState, RegisterState> {
-  constructor(props: MainState, state){
+interface RegisterProps extends MainState{
+  dispatch: Dispatch<any>
+}
+
+class Register extends React.Component<RegisterProps, RegisterState> {
+  constructor(props, state){
     super(props, state);  
     this.state = {
       key: '',
@@ -77,8 +85,9 @@ export default class Register extends React.Component<MainState, RegisterState> 
     this.setState({value, errorflag});
   }
   onClickRegister(e){
+    this.props.dispatch(registerItem(this.props, this.state));
     this.setState({key: '', value: '', focused: false});
-    this.props.emitter.emit('cookieRegister', this.state);
+    // this.props.emitter.emit('cookieRegister', this.state);
   }
 
   onDictionary() {
@@ -88,9 +97,9 @@ export default class Register extends React.Component<MainState, RegisterState> 
     this.setState({openAddTag: !this.state.openAddTag});
   }
 
-  onAddPhoto() {
-    console.log('onAddPhoto');
-  }
+  // onAddPhoto() {
+  //   console.log('onAddPhoto');
+  // }
 
   render(){
     const styles: common.Styles = {
@@ -174,9 +183,6 @@ export default class Register extends React.Component<MainState, RegisterState> 
           </div>
           <div style={styles.row}>
             <div style={{margin: 20}}>
-              <IconView icon={AddPhotoIcon} style={styles.smallIcon} onClick={this.onAddPhoto.bind(this)}/>
-            </div>
-            <div style={{margin: 20}}>
               <IconView icon={LabelOutlineIcon} style={styles.smallIcon} onClick={this.onAddTag.bind(this)}/>
               <div id='AddTag'/>
             </div>
@@ -186,6 +192,11 @@ export default class Register extends React.Component<MainState, RegisterState> 
           </div>
         </div>
     );
+
+            /*<div style={{margin: 20}}>
+              <IconView icon={AddPhotoIcon} style={styles.smallIcon} onClick={this.onAddPhoto.bind(this)}/>
+            </div>*/
+
 
     let registerView = <div/>;
     if(this.state.focused){
@@ -208,3 +219,5 @@ export default class Register extends React.Component<MainState, RegisterState> 
   }
 
 }
+
+export default connect()(Register);

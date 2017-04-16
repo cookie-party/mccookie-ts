@@ -14,7 +14,7 @@ export interface DictionaryProps {
 }
 
 export interface Cached {
-  // TODO
+  [searchWord: string]: string[]
 }
 export interface DictionaryState {
   searching: boolean,

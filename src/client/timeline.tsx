@@ -1,12 +1,22 @@
 import * as React from 'react';
-import {TableRow} from './components/TableRow';
+
+import {connect} from 'react-redux';
+
+import TableRow from './components/TableRow';
 
 import {WordInfo, Styles} from './common';
 import {MainState} from './main';
 
+export interface TimelineProps extends MainState{
+  showWordList: number, //1 -> home, 2 -> user
+}
+export enum ETimeline {
+  HOME = 1,
+  USER,
+}
 export interface TimelineState {
 }
-export default class Timeline extends React.Component<MainState, TimelineState> {
+class Timeline extends React.Component<TimelineProps, TimelineState> {
   constructor(props, state){
     super(props, state);  
   }
@@ -22,19 +32,47 @@ export default class Timeline extends React.Component<MainState, TimelineState> 
       },
     };
 
-    const kvList = this.props.wordList.map((kv: WordInfo, i: number)=>{
+    let wordListView; 
+    let kvList: WordInfo[] = [];
+    const showWordList: number = this.props.showWordList;
+    if(showWordList === ETimeline.HOME) {
+      kvList = this.props.wordList.home;
+    }
+    else if(showWordList === ETimeline.USER){
+      kvList = this.props.wordList.user;
+    }
+    wordListView = kvList
+      .filter((kv) => !!kv.value)
+      .map((kv: WordInfo, i: number)=>{
       return (
         <div key={i}>
-          <TableRow item={kv} emitter={this.props.emitter}/>
+          <TableRow item={kv} {...this.props}/>
         </div>
       );
     });
 
+
     return (
       <div style={styles.main}>
-        {kvList}
+        {wordListView}
       </div>
     );
   }
 
 }
+
+const mapStateToProps = (state) => {
+  return ({
+    wordList: state.wordList
+  });
+};
+
+const mapDispatchToProps = {};
+
+const RTimeline = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(Timeline);
+
+
+export default connect()(RTimeline);

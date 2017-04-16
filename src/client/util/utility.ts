@@ -1,3 +1,5 @@
+import Constant from '../constant';
+
 export const toJSON: (arg: string) => Object = (arg: any) => {
     arg = (typeof arg === "function") ? arg() : arg;
     if (typeof arg  !== "string") {
@@ -10,3 +12,7 @@ export const toJSON: (arg: string) => Object = (arg: any) => {
         return null;
     }
 };
+
+export const createTweetText = (key, value) => {
+    return key + Constant.SEPARATOR + value + Constant.SEPARATOR + Constant.HASHTAG;
+}

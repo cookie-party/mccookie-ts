@@ -1,45 +1,90 @@
 import * as React from 'react';
 import * as ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
+import {connect} from 'react-redux';
+import {Dispatch} from 'redux';
+import {EventEmitter} from 'eventemitter3';
+import * as moment from 'moment';
+
 import StarIcon from 'material-ui/svg-icons/toggle/star';
 import LibraryAddIcon from 'material-ui/svg-icons/av/library-add';
 import ReplyIcon from 'material-ui/svg-icons/content/reply';
 import DeleteIcon from 'material-ui/svg-icons/action/delete';
+import DialogBox from './DialogBox';
 
 import IconView from './IconView';
 import WordPaper from './WordPaper';
 
 import {WordInfo} from '../common';
-import {EventEmitter} from 'eventemitter3';
 
-import * as moment from 'moment';
+import {deleteItem} from '../redux/wordListAction';
+import * as API from '../util/api';
 
-export interface TableRowProps {
+import {AppState} from '../app';
+
+export interface TableRowProps extends AppState{
   item: WordInfo,
-  emitter: EventEmitter,
+  // emitter: EventEmitter,
 }
+
+interface ReduxTableRowProps extends TableRowProps {
+  dispatch: Dispatch<any>
+}
+
+export interface TableRowState {
+  deleteDialogFlag: boolean;
+} 
+
 //TODO 画像も表示する
-export class TableRow extends React.Component<TableRowProps, any> { 
+class TableRow extends React.Component<ReduxTableRowProps, TableRowState> { 
   constructor(props, state){
     super(props,state);
+
+    this.state = {
+      deleteDialogFlag: false,
+    }
+
   }
 
-  onReply() {
-    console.log('onReply');
-  }
+  // onReply() {
+  //   console.log('onReply');
+  // }
 
   onAddMyList() {
     console.log('onAddMyList');
-    this.props.emitter.emit('cookieItemToBook', this.props.item.id);
+    // this.props.emitter.emit('cookieItemToBook', this.props.item.id);
   }
 
-  onLike() {
-    console.log('onLike');
-  }
+  // onLike() {
+  //   console.log('onLike');
+  // }
 
   onDelete() {
-    console.log('onDelete', this.props.item);
-    this.props.emitter.emit('cookieItemDelete', this.props.item.id);
+    // console.log('onDelete', this.props.item);
+    this.setState({deleteDialogFlag: true});
+  }
+
+  onDeleteApproved() {
+    const item = this.props.item;
+    item.value = null;
+    item.updateDate = +new Date();
+    this.setState({deleteDialogFlag: false});
+    if(this.props.profile.provider === 'twitter.com') {
+      API.deleteItem(item.id).then(()=>{
+        //delete OK
+      }).catch((err)=>{
+        alert(err);
+      });
+    }
+    this.props.fb.database().ref('/users/'+this.props.profile.id+'/'+item.id)
+    .set(item)
+    .then((result) => {
+      //delete OK
+    })
+    .catch((err) => {
+      alert(err);
+    });
+    this.props.dispatch(deleteItem(this.props.item));
   }
 
   render() {
@@ -112,19 +157,23 @@ export class TableRow extends React.Component<TableRowProps, any> {
     const iconlist = (
       <div style={styles.row}>
         <div style={{margin: 5}}>
-          <IconView icon={ReplyIcon} style={styles.smallIcon} onClick={this.onReply.bind(this)}/>
-        </div>
-        <div style={{margin: 5}}>
           <IconView icon={LibraryAddIcon} style={styles.smallIcon} onClick={this.onAddMyList.bind(this)}/>
-        </div>
-        <div style={{margin: 5}}>
-          <IconView icon={StarIcon} style={styles.smallIcon} onClick={this.onLike.bind(this)}/>
         </div>
         <div style={{margin: 5}}>
           <IconView icon={DeleteIcon} style={styles.smallIcon} onClick={this.onDelete.bind(this)}/>
         </div>
       </div>
     );
+
+    /** TODO
+        <div style={{margin: 5}}>
+          <IconView icon={ReplyIcon} style={styles.smallIcon} onClick={this.onReply.bind(this)}/>
+        </div>
+        <div style={{margin: 5}}>
+          <IconView icon={StarIcon} style={styles.smallIcon} onClick={this.onLike.bind(this)}/>
+        </div>
+     * 
+     */
 
     const content = (
       <div style={styles.column}>
@@ -146,6 +195,24 @@ export class TableRow extends React.Component<TableRowProps, any> {
       </div>
     );
 
+    const dialogs = (
+      <div>
+        <div>
+          <DialogBox
+            title={'Delete Item'}
+            message={'単語を削除しますか？'}
+            flag={this.state.deleteDialogFlag}
+            onOK={this.onDeleteApproved.bind(this)}
+            onCancel={()=>{
+              this.setState({deleteDialogFlag: false});
+            }}
+          />
+        </div>
+        <div id='AddMyListDialog'>
+        </div>
+      </div>
+    );
+    
     return (
       <ReactCSSTransitionGroup
           transitionName="animation"
@@ -164,8 +231,13 @@ export class TableRow extends React.Component<TableRowProps, any> {
             {content}
           </div>
         </div>
+        <div>
+          {dialogs}
+        </div>
       </ReactCSSTransitionGroup>
     );
   }
 }
+
+export default connect()(TableRow);
 
