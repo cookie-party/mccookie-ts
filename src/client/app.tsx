@@ -5,6 +5,7 @@ import * as RRM from 'react-responsive-mixin';
 
 import * as firebase from 'firebase';
 import cookie from 'react-cookie';
+import {Store, Dispatch} from 'redux';
 
 import {UserProfile, Styles} from './common';
 import Main from './main';
@@ -15,7 +16,7 @@ const env = window ? window.APP_PROPS : {};
 //認証済みならAPP_OAUTHに値が入る
 const Profile = window ? window.APP_OAUTH : {};
 
-export interface AppState {
+export interface AppState{
   fb: firebase.app.App,
   tp: firebase.auth.TwitterAuthProvider,
   maxHeight: number|string,
@@ -24,8 +25,8 @@ export interface AppState {
   onLogout: (userId: string) => void,
 }
 
-export default class App extends React.Component<{}, AppState>{
-  constructor(props: React.Props<{}>, state: AppState){
+export default class App extends React.Component<any, AppState>{
+  constructor(props: any, state: AppState){
     super(props, state);
 
     const fconf = {

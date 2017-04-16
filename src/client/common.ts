@@ -35,6 +35,11 @@ export interface WordInfo {
   updateDate: number,
 }
 
+export interface IWordList {
+  home: WordInfo[],
+  user: WordInfo[],
+}
+
 export interface KeyValueItem {
   key: string,
   value: string,
