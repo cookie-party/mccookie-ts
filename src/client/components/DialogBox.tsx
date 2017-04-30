@@ -6,7 +6,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 import {MainState} from '../main';
 export interface DialogProps {
   title: string,
-  message: string,
+  message: any,
   flag: boolean,
   onOK: ()=>void,
   onCancel: ()=>void,
@@ -17,6 +17,7 @@ export default class DialogBox extends React.Component<DialogProps,DialogState>{
   constructor(props, state){
     super(props, state);
     this.state = {
+      // 
     };
   }
 
@@ -46,6 +47,7 @@ export default class DialogBox extends React.Component<DialogProps,DialogState>{
           actions={action}
           modal={true}
           open={flag}
+          autoScrollBodyContent={true}
         >
           {message}
         </Dialog>

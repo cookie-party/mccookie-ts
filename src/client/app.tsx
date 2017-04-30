@@ -3,7 +3,7 @@ declare var window: any;
 import * as React from 'react';
 import * as RRM from 'react-responsive-mixin';
 
-import * as firebase from 'firebase';
+import FirebaseWrapper from './firebaseWrapper';
 import cookie from 'react-cookie';
 import {Store, Dispatch} from 'redux';
 
@@ -17,8 +17,9 @@ const env = window ? window.APP_PROPS : {};
 const Profile = window ? window.APP_OAUTH : {};
 
 export interface AppState{
-  fb: firebase.app.App,
-  tp: firebase.auth.TwitterAuthProvider,
+//  fb: firebase.app.App,
+//  tp: firebase.auth.TwitterAuthProvider,
+  fb: FirebaseWrapper,
   maxHeight: number|string,
   profile: UserProfile,
   onLogin: (userProfile: UserProfile) => void,
@@ -29,19 +30,19 @@ export default class App extends React.Component<any, AppState>{
   constructor(props: any, state: AppState){
     super(props, state);
 
-    const fconf = {
-      apiKey: env.apiKey,
-      authDomain: env.authDomain,
-      databaseURL: env.databaseURL,
-      storageBucket: env.storageBucket,
-      messagingSenderId: env.messagingSenderId,
-    };
-    const fbapp: firebase.app.App = firebase.initializeApp(fconf);
-    const tp = new firebase.auth.TwitterAuthProvider();
+    // const fconf = {
+    //   apiKey: env.apiKey,
+    //   authDomain: env.authDomain,
+    //   databaseURL: env.databaseURL,
+    //   storageBucket: env.storageBucket,
+    //   messagingSenderId: env.messagingSenderId,
+    // };
+    // const fbapp: firebase.app.App = firebase.initializeApp(fconf);
+    // const tp = new firebase.auth.TwitterAuthProvider();
 
     this.state = {
-      fb: fbapp,
-      tp,
+      fb: new FirebaseWrapper(env),
+      // tp,
       // config: fconf,
       maxHeight: '100%',
       profile: null,
@@ -84,7 +85,8 @@ export default class App extends React.Component<any, AppState>{
 
   onLogout(userId: string) {
     //console.log('onLogout');
-    this.state.fb.auth().signOut();
+    // this.state.fb.auth().signOut();
+    this.state.fb.signOut();
     this.setState({profile: null});
     cookie.remove('profile', { path: '/' });
   }

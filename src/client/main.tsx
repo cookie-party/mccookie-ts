@@ -26,29 +26,26 @@ import PersonIcon from 'material-ui/svg-icons/social/person';
 
 import * as API from './util/api';
 
-// import MyProfile from './myprof';
-// import AddMylistDialog from './components/AddMylistDialog';
 // import MyList from './mylist';
-// import NewList from './newlist';
-
 import Register from './register';
 import Timeline from './timeline';
 import {ETimeline} from './timeline';
 import SearchBox from './components/SearchBox';
-// import DialogBox from './components/DialogBox';
 
 import {AppState} from './app';
 import {IWordList, WordInfo, KeyValueItem, UserProfile, Styles} from './common';
 import Constant from './constant';
+import FirebaseWrapper from './firebaseWrapper';
 
 import {initialize, userTimelineWithFb, userTimelineWithTw} from './redux/wordListAction';
 
 export interface MainState {
+  dispatch: Dispatch<any>,
+  profile: UserProfile,
+  fb: FirebaseWrapper,
   contents: number,
   wordList: IWordList,
   searchWord: string,
-  profile: UserProfile,
-  database: firebase.database.Database,
   addmylistDialogFlag: boolean,
   onAddMylist: ()=>void,
 }
@@ -76,15 +73,15 @@ class Main extends React.Component<MainProps, MainState>{
     }];
 
     this.state = {
-      //emitter,
+      dispatch: this.props.dispatch,
+      profile: this.props.profile,
+      fb: this.props.fb,
       contents: -1,
       wordList: {
         home: [],
         user: []
       },
       searchWord: '',
-      profile: this.props.profile,
-      database: null,
       onAddMylist: ()=>{},
       addmylistDialogFlag: false,
     };
@@ -93,39 +90,30 @@ class Main extends React.Component<MainProps, MainState>{
 
   componentDidMount() {
     // firebase Database
-    const fbDB: firebase.database.Database = this.props.fb.database();
     this.setState({
       contents: 0,
-      database: fbDB,
     });
 
     let wordList: WordInfo[] = [];
-    //mccookite db data
-    const mcctestRef: firebase.database.Reference = fbDB.ref('users/mcctest');
-    mcctestRef.once('value', (snapshot) => {
-      //デフォルト全員用データの表示
-      const values: any = snapshot.val();
-      this.props.dispatch(initialize(values));
 
-      // ユーザデータFirebase
-      const mcctestRef: firebase.database.Reference = fbDB.ref('users/' + this.state.profile.id);
-      mcctestRef.once('value', (snapshot) => { //TODO .onにしてsubscribeする？
-        const values: any = snapshot.val();
-        this.props.dispatch(userTimelineWithFb(values));
-      });
-
-      // ユーザデータtwitter
-      if(this.state.profile.provider === 'twitter.com') {
-        API.getHomeTimeline()
-        .then((response: API.TweetInfo[])=>{
-          this.props.dispatch(userTimelineWithTw(values));
-        }).catch((err)=>{
-          alert(err);
-          console.log(err);
-        });
-      }
-
+    const fb = this.props.fb;
+    fb.getDefaults().then((vals)=>{
+      this.props.dispatch(initialize(vals));
     });
+
+    fb.getUserData(this.state.profile).then((vals)=>{
+      this.props.dispatch(initialize(vals));
+    });
+
+    if(this.state.profile.provider === 'twitter.com') {
+      API.getHomeTimeline()
+      .then((response: API.TweetInfo[])=>{
+        this.props.dispatch(userTimelineWithTw(response));
+      }).catch((err)=>{
+        alert(err);
+        console.log(err);
+      });
+    }
 
   }
 
@@ -229,15 +217,15 @@ class Main extends React.Component<MainProps, MainState>{
       page = (
         <div style={styles.mainTable}>
           <div style={styles.register}>
-            <Register {...this.props} {...this.state}/>
+            <Register {...this.state}/>
           </div>
           <div style={styles.timeline}>
             <Tabs inkBarStyle={{background: 'white'}}>
               <Tab icon={<HomeIcon/>} style={{backgroundColor: '#fcdd6f'}} >
-                <Timeline showWordList={ETimeline.HOME} {...this.props} {...this.state} />
+                <Timeline showWordList={ETimeline.HOME} {...this.state} />
               </Tab>
               <Tab icon={<PersonIcon/>} style={{backgroundColor: '#fcdd6f'}} >
-                <Timeline showWordList={ETimeline.USER} {...this.props} {...this.state}/>
+                <Timeline showWordList={ETimeline.USER} {...this.state}/>
               </Tab>
             </Tabs>
           </div>

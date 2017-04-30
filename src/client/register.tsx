@@ -85,7 +85,7 @@ class Register extends React.Component<RegisterProps, RegisterState> {
     this.setState({value, errorflag});
   }
   onClickRegister(e){
-    this.props.dispatch(registerItem(this.props, this.state));
+    this.props.dispatch(registerItem(this.props.profile, this.props.fb, this.state));
     this.setState({key: '', value: '', focused: false});
     // this.props.emitter.emit('cookieRegister', this.state);
   }
