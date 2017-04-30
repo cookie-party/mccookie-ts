@@ -1,12 +1,12 @@
 import {Action} from 'redux';
-import {WordInfo, KeyValueItem} from '../common';
+import {UserProfile, WordInfo, KeyValueItem} from '../common';
 import Constant from '../constant';
-import {createTweetText} from '../util/utility';
+import {createTweetText, createWordInfo} from '../util/utility';
+import FirebaseWrapper from '../firebaseWrapper';
 
 import * as API from '../util/api';
 
 export interface WordListSetAction extends Action {
-  showWordList: number,
   home: WordInfo[],
   user: WordInfo[],
 }
@@ -15,7 +15,7 @@ export interface WordListItemAction extends Action {
   item: WordInfo
 }
 
-export const initialize = (values: any) => {
+export function initialize(values: any): WordListSetAction {
   let wordList: WordInfo[] = [];
   const vKeyids: string[] = Object.keys(values);
   wordList = vKeyids.map((keyid) => {
@@ -25,10 +25,10 @@ export const initialize = (values: any) => {
     type: 'set',
     home: wordList,
     user: [],
-  } as WordListSetAction;
+  };
 };
 
-export const userTimelineWithFb: (item: WordInfo) => WordListSetAction = (values: any) => {
+export function userTimelineWithFb(values: any): WordListSetAction {
   let wordList: WordInfo[] = [];
   const vKeyids: string[] = Object.keys(values);
   wordList = vKeyids.map((keyid) => {
@@ -38,10 +38,10 @@ export const userTimelineWithFb: (item: WordInfo) => WordListSetAction = (values
     type: 'set',
     home: [],
     user: wordList,
-  } as WordListSetAction;
+  };
 };
 
-export const userTimelineWithTw: (item: WordInfo) => WordListSetAction = (response: any) => {
+export function userTimelineWithTw(response: API.TweetInfo[]): WordListSetAction {
   const nextWordList: WordInfo[] = response
   .filter((v)=>{
     return v.text.indexOf(Constant.HASHTAG) > 0 && v.text.indexOf(Constant.ATTMARK) !== 0;
@@ -63,38 +63,30 @@ export const userTimelineWithTw: (item: WordInfo) => WordListSetAction = (respon
     type: 'set',
     home: [],
     user: nextWordList,
-  } as WordListSetAction;
+  };
 };
 
-export const registerItem: (props, kv: KeyValueItem) => WordListItemAction = (props, kv: KeyValueItem) => {
-  if(props.profile.provider === 'twitter.com') {
-    const kvtext: string = createTweetText(kv.key, kv.value);
-    API.postTweet(kvtext)
-    .then((response: any)=>{
-      // console.log('response',response);
-      if(response && response.statusCode === 200) {
-        console.log('success!');
-        location.reload();
-      }
-    }).catch((err: string)=>{
-      console.log(err);
-    });
-  }
-  const testUserPath: string = 'users/'+props.profile.id+'/';
-  const keyid: string = props.database.ref().child(testUserPath).push().key;
-  const newData: WordInfo = {
-    id: keyid,
-    key: kv.key,
-    value: kv.value,
-    userId: props.profile.id,
-    userName: props.profile.displayName,
-    icon: props.profile.photoURL,
-    createDate: +new Date(),
-    updateDate: +new Date(),        
-  };
-  props.database.ref(testUserPath + keyid).set(newData)
+export function registerItem(profile: UserProfile, fb: FirebaseWrapper, kv: KeyValueItem): WordListItemAction {
+  const _id = fb.generateId(profile);
+  const newData: WordInfo = createWordInfo(kv, profile, _id);
+  fb.pushWordInfo(profile, _id, newData)
   .then((res) => {
     console.log(res);
+    if(profile.provider === 'twitter.com') {
+      const kvtext: string = createTweetText(kv.key, kv.value);
+      API.postTweet(kvtext)
+      .then((response: any)=>{
+        // console.log('response',response);
+        if(response && response.statusCode === 200) {
+          location.reload();
+        }
+      }).catch((err: string)=>{
+        console.log(err);
+      });
+    }
+    else {
+      location.reload();
+    }
   }).catch((err) => {
     console.log(err);
   });
@@ -105,8 +97,20 @@ export const registerItem: (props, kv: KeyValueItem) => WordListItemAction = (pr
   };
 };
 
-export const deleteItem: (item: WordInfo) => WordListItemAction = (item: WordInfo) => {
+export function deleteItem(profile: UserProfile, fb: FirebaseWrapper, item: WordInfo): WordListItemAction {
   item.value = null, item.updateDate = +new Date();
+  if(profile.provider === 'twitter.com') {
+    API.deleteItem(item.id).then(()=>{
+      //delete OK
+    }).catch((err)=>{
+      alert(err);
+    });
+  }
+  fb.pushWordInfo(profile, item.id, item)
+  .catch((error)=>{
+    alert(error);
+  })
+
   return {
     type: 'delete',
     item,

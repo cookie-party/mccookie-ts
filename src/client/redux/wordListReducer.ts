@@ -19,7 +19,7 @@ const defaultWordLists: IWordList = {
   user: defaultWordList,
 }
 
-const wordList: Reducer<any> = (state: IWordList = defaultWordLists, _action: WordListSetAction|WordListItemAction) => {
+const WordList: Reducer<any> = (state: IWordList = defaultWordLists, _action: WordListSetAction|WordListItemAction) => {
   let type: string = _action.type;
   let action;
   switch(type) {
@@ -57,4 +57,4 @@ const wordList: Reducer<any> = (state: IWordList = defaultWordLists, _action: Wo
   }
 };
 
-export default wordList;
+export default WordList;
