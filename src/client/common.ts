@@ -38,6 +38,7 @@ export interface WordInfo {
 export interface IWordList {
   home: WordInfo[],
   user: WordInfo[],
+  list: WordInfo[],
 }
 
 export interface KeyValueItem {

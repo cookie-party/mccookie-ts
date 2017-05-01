@@ -23,6 +23,7 @@ import CircularProgress from 'material-ui/CircularProgress';
 import {Tabs, Tab} from 'material-ui/Tabs';
 import HomeIcon from 'material-ui/svg-icons/action/home';
 import PersonIcon from 'material-ui/svg-icons/social/person';
+import ListIcon from 'material-ui/svg-icons/action/dns';
 
 import * as API from './util/api';
 
@@ -54,6 +55,7 @@ export interface MainState {
   status: number,
   contents: number,
   wordList: IWordList,
+  showWordList: number,
   mylist: Mylist[],
   searchWord: string,
   createMylistDialogFlag: boolean,
@@ -91,9 +93,11 @@ class Main extends React.Component<MainProps, MainState>{
       contents: -1,
       wordList: {
         home: [],
-        user: []
+        user: [],
+        list: [],
       },
       mylist: this.props.mylist,
+      showWordList: ETimeline.HOME,
       searchWord: '',
       onAddMylist: ()=>{},
       createMylistDialogFlag: false,
@@ -126,6 +130,7 @@ class Main extends React.Component<MainProps, MainState>{
     });
 
     if(this.state.profile.provider === 'twitter.com') {
+      this.setState({status: Status.opening});
       API.getHomeTimeline().then((response: API.TweetInfo[])=>{
         this.props.dispatch(userTimelineWithTw(response));
         this.setState({status: Status.opened});
@@ -174,15 +179,20 @@ class Main extends React.Component<MainProps, MainState>{
     }
   }
   onSelectMylist(idx) {
-    console.log('onSelectMylist['+idx+']', this.props.mylist);
     //redux-action
     const list = this.props.mylist[idx];
     if(list && list.words && list.words.length > 0){
+      this.setState({status: Status.opening});
       this.props.fb.getItemWithIdList(list.words)
       .then((wordInfoList: WordInfo[])=>{
         this.props.dispatch(selectList(wordInfoList));
+        this.setState({status: Status.opened, showWordList: ETimeline.LIST});
       }).catch((err) => console.log(err));
     }
+  }
+
+  onSelectTab(key) {
+    this.setState({showWordList: key});
   }
   
   render() {
@@ -292,12 +302,15 @@ class Main extends React.Component<MainProps, MainState>{
               <Register {...this.state}/>
             </div>
             <div style={styles.timeline}>
-              <Tabs inkBarStyle={{background: 'white'}}>
-                <Tab icon={<HomeIcon/>} style={{backgroundColor: '#fcdd6f'}} >
-                  <Timeline showWordList={ETimeline.HOME} {...this.state} />
+              <Tabs inkBarStyle={{background: '#dd5500'}}>
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.HOME)} key={ETimeline.HOME} icon={<HomeIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+                  <Timeline {...this.state} />
                 </Tab>
-                <Tab icon={<PersonIcon/>} style={{backgroundColor: '#fcdd6f'}} >
-                  <Timeline showWordList={ETimeline.USER} {...this.state}/>
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.USER)} key={ETimeline.USER}icon={<PersonIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+                  <Timeline {...this.state} />
+                </Tab>
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.LIST)} key={ETimeline.LIST} icon={<ListIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+                  <Timeline {...this.state} />
                 </Tab>
               </Tabs>
             </div>
@@ -344,9 +357,9 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = {};
 
-const RTMain = connect(
+const RMain = connect(
   mapStateToProps,
   mapDispatchToProps,
 )(Main);
 
-export default connect()(RTMain);
+export default connect()(RMain);

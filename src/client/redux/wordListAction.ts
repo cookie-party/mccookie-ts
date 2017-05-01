@@ -9,6 +9,7 @@ import * as API from '../util/api';
 export interface WordListSetAction extends Action {
   home: WordInfo[],
   user: WordInfo[],
+  list: WordInfo[],
 }
 
 export interface WordListItemAction extends Action {
@@ -22,9 +23,10 @@ export function homeTimeline(values: any): WordListSetAction {
     return values[keyid];
   });
   return {
-    type: 'set',
+    type: 'set_home',
     home: wordList,
     user: [],
+    list: [],
   };
 };
 
@@ -35,9 +37,24 @@ export function userTimeline(values: any): WordListSetAction {
     return values[keyid];
   });
   return {
-    type: 'set',
+    type: 'set_user',
     home: [],
     user: wordList,
+    list: [],
+  };
+};
+
+export function setList(values: any): WordListSetAction {
+  let wordList: WordInfo[] = [];
+  const vKeyids: string[] = Object.keys(values);
+  wordList = vKeyids.map((keyid) => {
+    return values[keyid];
+  });
+  return {
+    type: 'set_user',
+    home: [],
+    user: [],
+    list: wordList,
   };
 };
 
@@ -60,18 +77,33 @@ export function userTimelineWithTw(response: API.TweetInfo[]): WordListSetAction
     };
   });
   return {
-    type: 'set',
+    type: 'add',
     home: [],
     user: nextWordList,
+    list: [],
   };
 };
 
+export function addTimeline(values: any, target: 'home'|'user'): WordListSetAction {
+  let wordList: WordInfo[] = [];
+  const vKeyids: string[] = Object.keys(values);
+  wordList = vKeyids.map((keyid) => {
+    return values[keyid];
+  });
+  return {
+    type: 'add',
+    home: target === 'home' && wordList,
+    user: target === 'user' && wordList,
+    list: [],
+  };
+};
+
+//TODO subscribe使ってreloadしなくてもいいようにしたい
 export function registerItem(profile: UserProfile, fb: FirebaseWrapper, kv: KeyValueItem): WordListItemAction {
   const _id = fb.generateId(profile);
   const newData: WordInfo = createWordInfo(kv, profile, _id);
   fb.pushWordInfo(profile, _id, newData)
   .then((res) => {
-    console.log(res);
     if(profile.provider === 'twitter.com') {
       const kvtext: string = createTweetText(kv.key, kv.value);
       API.postTweet(kvtext)
@@ -119,9 +151,10 @@ export function deleteItem(profile: UserProfile, fb: FirebaseWrapper, item: Word
 
 export function selectList(wordInfoList: WordInfo[]): WordListSetAction {
   return {
-    type: 'set',
-    home: wordInfoList,
-    user: []
+    type: 'set-list',
+    home: [],
+    user: [],
+    list: wordInfoList,
   }
 }
 

@@ -7,16 +7,14 @@ import TableRow from './components/TableRow';
 import {WordInfo, Styles} from './common';
 import {MainState} from './main';
 
-export interface TimelineProps extends MainState{
-  showWordList: number, //1 -> home, 2 -> user
-}
 export enum ETimeline {
   HOME = 1,
   USER,
+  LIST,
 }
 export interface TimelineState {
 }
-class Timeline extends React.Component<TimelineProps, TimelineState> {
+class Timeline extends React.Component<MainState, TimelineState> {
   constructor(props, state){
     super(props, state);  
   }
@@ -40,6 +38,9 @@ class Timeline extends React.Component<TimelineProps, TimelineState> {
     }
     else if(showWordList === ETimeline.USER){
       kvList = this.props.wordList.user;
+    }
+    else if(showWordList === ETimeline.LIST){
+      kvList = this.props.wordList.list;
     }
     wordListView = kvList
       .filter((kv) => !!kv.value)

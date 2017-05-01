@@ -23,9 +23,9 @@ import * as API from '../util/api';
 
 import {AppState} from '../app';
 import {addMylistDialog} from '../mylists';
-import {TimelineProps} from '../timeline';
+import {MainState} from '../main';
 
-export interface TableRowProps extends TimelineProps{
+export interface TableRowProps extends MainState{
   item: WordInfo,
   // emitter: EventEmitter,
 }
@@ -66,9 +66,11 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
   }
 
   onSelectedAddMyList() {
-    console.log('onSelectedAddMyList');
     //fb-
     this.props.fb.addMylist(this.props.profile, this.state.selectedId, this.props.item.id);
+    alert(this.props.item.key+'のカードを追加しました.');
+    //TODO reloadしたくない
+    location.reload();
   }
 
   // onLike() {

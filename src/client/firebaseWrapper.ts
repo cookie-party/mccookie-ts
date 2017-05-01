@@ -188,6 +188,7 @@ export default class FirebaseWrapper {
     });
   }
 
+  //TODO もっとかしこいやり方ありそう
   getItemWithIdList(idlist: string[]) : Promise<any> {
     return new Promise((resolve, reject) => {
       let results = [];
