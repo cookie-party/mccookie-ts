@@ -63,6 +63,9 @@ export default class Dictionary extends React.Component<DictionaryProps, Diction
           cached[searchWord] = means;
           this.props.onSearched({target:{value: means[0]}});
         }
+        else {
+          this.props.onSearched({target:{value: ''}});
+        }
         this.setState({means: means, meaning: means[0], meaningsAll: response.meaning, cached, searching: false});
       }).catch((err)=>{
         // console.log(err);
