@@ -14,11 +14,11 @@ export function createList(mylist: Mylist): ListCreateAction {
   return  _.extend({type: 'create_list'}, mylist);   
 }
 
-export function insertList(id: string, wordId: number): ListInsertAction {
+export function insertList(id: string, wordId: string): ListInsertAction {
   return _.extend({type: 'insert_list', ...arguments});
 }
 
-export function removeList(id: string, wordId: number): ListRemoveAction {
+export function removeList(id: string, wordId: string): ListRemoveAction {
   return _.extend({type: 'remove_list', ...arguments});
 }
 

@@ -25,6 +25,9 @@ import {AppState} from '../app';
 import {addMylistDialog} from '../mylists';
 import {MainState} from '../main';
 
+import {ETimeline} from '../timeline';
+import {removeList} from '../redux/mylistAction';
+
 export interface TableRowProps extends MainState{
   item: WordInfo,
   // emitter: EventEmitter,
@@ -36,6 +39,7 @@ interface ReduxTableRowProps extends TableRowProps {
 
 export interface TableRowState {
   deleteDialogFlag: boolean;
+  removeListDialogFlag: boolean;
   addFolderDialog: boolean;
   selectedId: string;
 } 
@@ -47,6 +51,7 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
 
     this.state = {
       deleteDialogFlag: false,
+      removeListDialogFlag: false,
       addFolderDialog: false,
       selectedId: null,
     }
@@ -81,10 +86,23 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
     // console.log('onDelete', this.props.item);
     this.setState({deleteDialogFlag: true});
   }
-
   onDeleteApproved() {
     this.props.dispatch(deleteItem(this.props.profile, this.props.fb, this.props.item));
     this.setState({deleteDialogFlag: false});
+  }
+
+  onRemoveList() {
+    this.setState({removeListDialogFlag: true});
+  }
+  onRemoveListApproved() {
+    this.props.fb.removeMylist(this.props.profile, this.props.listId, this.props.item.id)
+    .then(()=>{
+      this.props.dispatch(removeList(this.props.listId, this.props.item.id));
+      this.setState({removeListDialogFlag: false});
+    }).catch((err)=>{
+      alert(err);
+      this.setState({removeListDialogFlag: false});
+    });
   }
 
   render() {
@@ -154,13 +172,22 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
       }
     }
 
+    let deleteIconView = null;
+    if(this.props.showWordList === ETimeline.USER) {
+      deleteIconView = <IconView icon={DeleteIcon} style={styles.smallIcon} onClick={this.onDelete.bind(this)}/>
+    }
+    else if(this.props.showWordList === ETimeline.LIST) {
+      deleteIconView = <IconView icon={DeleteIcon} style={styles.smallIcon} onClick={this.onRemoveList.bind(this)}/>
+    }
+
+
     const iconlist = (
       <div style={styles.row}>
         <div style={{margin: 5}}>
           <IconView icon={LibraryAddIcon} style={styles.smallIcon} onClick={this.onAddMyList.bind(this)}/>
         </div>
         <div style={{margin: 5}}>
-          <IconView icon={DeleteIcon} style={styles.smallIcon} onClick={this.onDelete.bind(this)}/>
+          {deleteIconView}
         </div>
       </div>
     );
@@ -197,6 +224,17 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
 
     const dialogs = (
       <div>
+        <div>
+          <DialogBox
+            title={'Remove Item From List'}
+            message={'単語をリストから削除しますか？'}
+            flag={this.state.removeListDialogFlag}
+            onOK={this.onRemoveListApproved.bind(this)}
+            onCancel={()=>{
+              this.setState({removeListDialogFlag: false});
+            }}
+          />
+        </div>
         <div>
           <DialogBox
             title={'Delete Item'}

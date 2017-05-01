@@ -57,6 +57,7 @@ export interface MainState {
   wordList: IWordList,
   showWordList: number,
   mylist: Mylist[],
+  listId: string,
   searchWord: string,
   createMylistDialogFlag: boolean,
   onAddMylist: ()=>void,
@@ -97,6 +98,7 @@ class Main extends React.Component<MainProps, MainState>{
         list: [],
       },
       mylist: this.props.mylist,
+      listId: null,
       showWordList: ETimeline.HOME,
       searchWord: '',
       onAddMylist: ()=>{},
@@ -186,7 +188,7 @@ class Main extends React.Component<MainProps, MainState>{
       this.props.fb.getItemWithIdList(list.words)
       .then((wordInfoList: WordInfo[])=>{
         this.props.dispatch(selectList(wordInfoList));
-        this.setState({status: Status.opened, showWordList: ETimeline.LIST});
+        this.setState({status: Status.opened, listId: list.id, showWordList: ETimeline.LIST});
       }).catch((err) => console.log(err));
     }
   }
