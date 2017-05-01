@@ -1,5 +1,6 @@
 import * as firebase from 'firebase';
-import {UserProfile, WordInfo, KeyValueItem} from './common';
+import * as _ from 'underscore';
+import {UserProfile, WordInfo, KeyValueItem, Mylist} from './common';
 
 export default class FirebaseWrapper {
   fb: firebase.app.App;
@@ -77,15 +78,15 @@ export default class FirebaseWrapper {
     });
   }
 
+  // TODO subscribeもつくる
   getUserData(profile: UserProfile) : Promise<any> {
     return new Promise((resolve, reject) => {
-      const mcctestRef: firebase.database.Reference = this.fb.database().ref('users/' + profile.id);
-      mcctestRef.once('value', (snapshot) => { //TODO .onにしてsubscribeする？
+      const userref: firebase.database.Reference = this.fb.database().ref('users/' + profile.id);
+      userref.once('value', (snapshot) => { //TODO .onにしてsubscribeする？
         const values: any = snapshot.val();
         resolve(values);
       });
     });
-
   }
 
   generateId(profile: UserProfile): string {
@@ -96,13 +97,113 @@ export default class FirebaseWrapper {
   pushWordInfo(profile: UserProfile, id: string, wordInfo: WordInfo): Promise<any> {
     return new Promise((resolve, reject) => {
       const path: string = 'users/'+profile.id+'/';
-      return this.fb.database().ref(path + id).set(wordInfo);
+      this.fb.database().ref(path + id).set(wordInfo);
+      resolve();
     });
   }
 
-  deleteWordInfo(profile: UserProfile, id: string, item: WordInfo) {
+  removeWordInfo(profile: UserProfile, id: string, item: WordInfo) {
     item.value = null, item.updateDate = +new Date();
     return this.pushWordInfo(profile, id, item);
+  }
+
+  deleteWordInfo(profile: UserProfile, id: string, item: WordInfo) {
+    item = null;
+    return this.pushWordInfo(profile, id, item);
+  }
+
+  generateListId(profile: UserProfile): string {
+    const path: string = 'users/'+profile.id+'/list/';
+    return this.fb.database().ref().child(path).push().key;
+  }
+
+  // TODO subscribeもつくる
+  getMylist(profile: UserProfile) : Promise<any> {
+    return new Promise((resolve, reject) => {
+      const listRef: firebase.database.Reference = this.fb.database().ref('users/' + profile.id + '/list');
+      listRef.once('value', (snapshot) => { //TODO .onにしてsubscribeする？
+        const values: any = snapshot.val();
+        resolve(_.values(values));
+      });
+    });
+  }
+
+  setMylist(profile: UserProfile, id: string, mylist: Mylist) : Promise<any> {
+    return new Promise((resolve, reject) => {
+      const path: string = 'users/'+profile.id+'/list/';
+      this.fb.database().ref(path + id).set(mylist);
+      resolve(mylist);
+    });
+  }
+
+  addMylist(profile: UserProfile, id: string, addId: string): Promise<any>  {
+    return new Promise((resolve, reject) => {
+      const listRef: firebase.database.Reference = this.fb.database().ref('users/' + profile.id + '/list/' + id + '/words');
+      listRef.once('value', (snapshot) => { //TODO .onにしてsubscribeする？
+        const wordIds: string[] = snapshot.val();
+        const path: string = 'users/'+profile.id+'/list/'+id+'/words/';
+        let newIds: string[] = [];
+        if(wordIds) {
+          newIds = wordIds;
+        }
+        newIds.push(addId);
+        this.fb.database().ref(path).set(newIds);
+        resolve();
+      });
+    });
+  }
+
+  removeMylist(profile: UserProfile, id: string, removeId: string) {
+    return new Promise((resolve, reject) => {
+      const listRef: firebase.database.Reference = this.fb.database().ref('users/' + profile.id + '/list/' + id);
+      listRef.once('value', (snapshot) => { //TODO .onにしてsubscribeする？
+        const values: Mylist = snapshot.val();
+        if(values) {
+          const path: string = 'users/'+profile.id+'/list/';
+          values.words = _.without(values.words, removeId);
+          this.fb.database().ref(path + id).set(values);
+          resolve();
+        }
+        else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  deleteMylist(profile: UserProfile, id: string) {
+    return new Promise((resolve, reject) => {
+      const listRef: firebase.database.Reference = this.fb.database().ref('users/' + profile.id + '/list/' + id);
+      listRef.once('value', (snapshot) => { //TODO .onにしてsubscribeする？
+        const values: Mylist = snapshot.val();
+        if(values) {
+          const path: string = 'users/'+profile.id+'/list/';
+          this.fb.database().ref(path + id).set(null);
+          resolve();
+        }
+        else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  getItemWithIdList(idlist: string[]) : Promise<any> {
+    return new Promise((resolve, reject) => {
+      let results = [];
+      const userref: firebase.database.Reference = this.fb.database().ref('users/');
+      userref.once('value', (snapshot) => { //TODO .onにしてsubscribeする？
+        const values: any = snapshot.val();
+        Object.keys(values).forEach((userid) => {
+          idlist.forEach((wordid) => {
+            if(values[userid][wordid]){
+              results.push(values[userid][wordid]);
+            }
+          })
+        });
+        resolve(results);
+      });
+    });
   }
 
 }

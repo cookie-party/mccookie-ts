@@ -45,3 +45,9 @@ export interface KeyValueItem {
   value: string,
 }
 
+export interface Mylist {
+  id: string,
+  name: string,
+  words: string[],
+}
+

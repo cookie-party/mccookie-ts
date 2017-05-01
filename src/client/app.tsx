@@ -30,20 +30,8 @@ export default class App extends React.Component<any, AppState>{
   constructor(props: any, state: AppState){
     super(props, state);
 
-    // const fconf = {
-    //   apiKey: env.apiKey,
-    //   authDomain: env.authDomain,
-    //   databaseURL: env.databaseURL,
-    //   storageBucket: env.storageBucket,
-    //   messagingSenderId: env.messagingSenderId,
-    // };
-    // const fbapp: firebase.app.App = firebase.initializeApp(fconf);
-    // const tp = new firebase.auth.TwitterAuthProvider();
-
     this.state = {
       fb: new FirebaseWrapper(env),
-      // tp,
-      // config: fconf,
       maxHeight: '100%',
       profile: null,
       onLogin: this.onLogin.bind(this),
@@ -85,7 +73,6 @@ export default class App extends React.Component<any, AppState>{
 
   onLogout(userId: string) {
     //console.log('onLogout');
-    // this.state.fb.auth().signOut();
     this.state.fb.signOut();
     this.setState({profile: null});
     cookie.remove('profile', { path: '/' });

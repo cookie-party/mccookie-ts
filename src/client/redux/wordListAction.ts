@@ -15,7 +15,7 @@ export interface WordListItemAction extends Action {
   item: WordInfo
 }
 
-export function initialize(values: any): WordListSetAction {
+export function homeTimeline(values: any): WordListSetAction {
   let wordList: WordInfo[] = [];
   const vKeyids: string[] = Object.keys(values);
   wordList = vKeyids.map((keyid) => {
@@ -28,7 +28,7 @@ export function initialize(values: any): WordListSetAction {
   };
 };
 
-export function userTimelineWithFb(values: any): WordListSetAction {
+export function userTimeline(values: any): WordListSetAction {
   let wordList: WordInfo[] = [];
   const vKeyids: string[] = Object.keys(values);
   wordList = vKeyids.map((keyid) => {
@@ -116,5 +116,13 @@ export function deleteItem(profile: UserProfile, fb: FirebaseWrapper, item: Word
     item,
   };
 };
+
+export function selectList(wordInfoList: WordInfo[]): WordListSetAction {
+  return {
+    type: 'set',
+    home: wordInfoList,
+    user: []
+  }
+}
 
 

@@ -33,25 +33,36 @@ import {ETimeline} from './timeline';
 import SearchBox from './components/SearchBox';
 
 import {AppState} from './app';
-import {IWordList, WordInfo, KeyValueItem, UserProfile, Styles} from './common';
+import {IWordList, WordInfo, KeyValueItem, Mylist, UserProfile, Styles} from './common';
 import Constant from './constant';
 import FirebaseWrapper from './firebaseWrapper';
 
-import {initialize, userTimelineWithFb, userTimelineWithTw} from './redux/wordListAction';
+import {homeTimeline, userTimeline, userTimelineWithTw, selectList} from './redux/wordListAction';
+import {mylist, createList} from './redux/mylistAction';
+import {createMylistDialog} from './mylists';
+
+enum Status {
+  close,
+  opening,
+  opened
+}
 
 export interface MainState {
   dispatch: Dispatch<any>,
   profile: UserProfile,
   fb: FirebaseWrapper,
+  status: number,
   contents: number,
   wordList: IWordList,
+  mylist: Mylist[],
   searchWord: string,
-  addmylistDialogFlag: boolean,
+  createMylistDialogFlag: boolean,
   onAddMylist: ()=>void,
 }
 
 export interface MainProps extends AppState {
   dispatch: Dispatch<any>,
+  mylist: Mylist[],
 }
 
 class Main extends React.Component<MainProps, MainState>{
@@ -76,14 +87,16 @@ class Main extends React.Component<MainProps, MainState>{
       dispatch: this.props.dispatch,
       profile: this.props.profile,
       fb: this.props.fb,
+      status: Status.close,
       contents: -1,
       wordList: {
         home: [],
         user: []
       },
+      mylist: this.props.mylist,
       searchWord: '',
       onAddMylist: ()=>{},
-      addmylistDialogFlag: false,
+      createMylistDialogFlag: false,
     };
 
   }
@@ -92,26 +105,35 @@ class Main extends React.Component<MainProps, MainState>{
     // firebase Database
     this.setState({
       contents: 0,
+      status: Status.opening,
     });
 
     let wordList: WordInfo[] = [];
 
     const fb = this.props.fb;
     fb.getDefaults().then((vals)=>{
-      this.props.dispatch(initialize(vals));
-    });
-
-    fb.getUserData(this.state.profile).then((vals)=>{
-      this.props.dispatch(initialize(vals));
+      this.props.dispatch(homeTimeline(vals));
+      return fb.getUserData(this.state.profile);
+    }).then((vals)=>{
+      //ユーザタイムライン
+      this.props.dispatch(userTimeline(vals));
+      return fb.getMylist(this.state.profile);
+    }).then((mylists)=>{
+      if(mylists && mylists.length > 0) {
+        this.props.dispatch(mylist(mylists));
+      }
+      this.setState({status: Status.opened});
     });
 
     if(this.state.profile.provider === 'twitter.com') {
-      API.getHomeTimeline()
-      .then((response: API.TweetInfo[])=>{
+      API.getHomeTimeline().then((response: API.TweetInfo[])=>{
         this.props.dispatch(userTimelineWithTw(response));
+        this.setState({status: Status.opened});
+        //TODO ツイッターのリスト使う？
       }).catch((err)=>{
         alert(err);
         console.log(err);
+        this.setState({status: Status.close});
       });
     }
 
@@ -125,6 +147,44 @@ class Main extends React.Component<MainProps, MainState>{
     this.props.onLogout(this.state.profile.id);
   }
 
+  onAddMylist() {
+    this.setState({createMylistDialogFlag: true});
+  }
+  onAddedMylist(name: string) {
+    if(name) {
+      //fb.add
+      const listId = this.props.fb.generateListId(this.props.profile);
+      const mylist: Mylist = {
+        id: listId,
+        name,
+        words: []
+      };
+      this.props.fb.setMylist(this.props.profile, listId, mylist)
+      .then((value) => {
+        //redux-action
+        this.props.dispatch(createList(mylist));
+        this.setState({createMylistDialogFlag: false});
+      }).catch((error)=>{
+        alert(error.message);
+        this.setState({createMylistDialogFlag: false});
+      });
+    }
+    else {
+      this.setState({createMylistDialogFlag: false});
+    }
+  }
+  onSelectMylist(idx) {
+    console.log('onSelectMylist['+idx+']', this.props.mylist);
+    //redux-action
+    const list = this.props.mylist[idx];
+    if(list && list.words && list.words.length > 0){
+      this.props.fb.getItemWithIdList(list.words)
+      .then((wordInfoList: WordInfo[])=>{
+        this.props.dispatch(selectList(wordInfoList));
+      }).catch((err) => console.log(err));
+    }
+  }
+  
   render() {
     const styles: Styles = {
       column: {
@@ -186,6 +246,10 @@ class Main extends React.Component<MainProps, MainState>{
       },
     };
 
+    const mylistMenuItems: Array<any> = this.props.mylist.map((list, i) => {
+      return <MenuItem key={i} primaryText={list.name} onClick={this.onSelectMylist.bind(this, i)} />;
+    });
+
     const titleBar = (
       <div style={styles.row}>
         <div style={{width: 250, height: 40, display: 'flex', justifyContent: 'space-around'}}>
@@ -196,7 +260,14 @@ class Main extends React.Component<MainProps, MainState>{
         </div>
         <div style={{width: 150, display: 'flex'}}>
           <div style={{display: 'flex',  justifyContent: 'center', flexDirection: 'column',}}>
-            <FolderIcon style={{cursor: 'pointer'}}/>
+            <IconMenu
+            iconButtonElement={<IconButton><FolderIcon style={{cursor: 'pointer'}}/></IconButton>}
+            anchorOrigin={{horizontal: 'left', vertical: 'top'}}
+            targetOrigin={{horizontal: 'left', vertical: 'top'}}
+            >
+              {mylistMenuItems}
+              <MenuItem key={-1} primaryText='Add Mylist' onClick={this.onAddMylist.bind(this)} />
+            </IconMenu>
           </div>
           <div style={{margin: 10}}>
             <IconMenu
@@ -213,33 +284,35 @@ class Main extends React.Component<MainProps, MainState>{
     );
 
     let page = <CircularProgress/>;
-    if(this.state.contents === 0){
-      page = (
-        <div style={styles.mainTable}>
-          <div style={styles.register}>
-            <Register {...this.state}/>
+    if(this.state.status === Status.opened) {
+      if(this.state.contents === 0){
+        page = (
+          <div style={styles.mainTable}>
+            <div style={styles.register}>
+              <Register {...this.state}/>
+            </div>
+            <div style={styles.timeline}>
+              <Tabs inkBarStyle={{background: 'white'}}>
+                <Tab icon={<HomeIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+                  <Timeline showWordList={ETimeline.HOME} {...this.state} />
+                </Tab>
+                <Tab icon={<PersonIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+                  <Timeline showWordList={ETimeline.USER} {...this.state}/>
+                </Tab>
+              </Tabs>
+            </div>
           </div>
-          <div style={styles.timeline}>
-            <Tabs inkBarStyle={{background: 'white'}}>
-              <Tab icon={<HomeIcon/>} style={{backgroundColor: '#fcdd6f'}} >
-                <Timeline showWordList={ETimeline.HOME} {...this.state} />
-              </Tab>
-              <Tab icon={<PersonIcon/>} style={{backgroundColor: '#fcdd6f'}} >
-                <Timeline showWordList={ETimeline.USER} {...this.state}/>
-              </Tab>
-            </Tabs>
-          </div>
-        </div>
-      );
-    }
-    else if(this.state.contents === 1){
-      // page = <MyProfile {...this.state}/>;
-    }
-    else if(this.state.contents === 2){
-      // page = <MyList {...this.state}/>;
-    }
-    else if(this.state.contents === 3){
-      // page = <NewList {...this.state} />;
+        );
+      }
+      else if(this.state.contents === 1){
+        // page = <MyProfile {...this.state}/>;
+      }
+      else if(this.state.contents === 2){
+        // page = <MyList {...this.state}/>;
+      }
+      else if(this.state.contents === 3){
+        // page = <NewList {...this.state} />;
+      }
     }
 
     return (
@@ -254,10 +327,26 @@ class Main extends React.Component<MainProps, MainState>{
             {page}
           </div>
 
+          {createMylistDialog(this.state.createMylistDialogFlag, 
+          this.onAddedMylist.bind(this) )}
+
         </div>
       </div>
     );
   }
 }
 
-export default connect()(Main);
+const mapStateToProps = (state) => {
+  return ({
+    mylist: state.mylist
+  });
+};
+
+const mapDispatchToProps = {};
+
+const RTMain = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(Main);
+
+export default connect()(RTMain);

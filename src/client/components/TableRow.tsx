@@ -10,7 +10,6 @@ import StarIcon from 'material-ui/svg-icons/toggle/star';
 import LibraryAddIcon from 'material-ui/svg-icons/av/library-add';
 import ReplyIcon from 'material-ui/svg-icons/content/reply';
 import DeleteIcon from 'material-ui/svg-icons/action/delete';
-import {RadioButton, RadioButtonGroup} from 'material-ui/RadioButton';
 
 import DialogBox from './DialogBox';
 
@@ -23,8 +22,10 @@ import {deleteItem} from '../redux/wordListAction';
 import * as API from '../util/api';
 
 import {AppState} from '../app';
+import {addMylistDialog} from '../mylists';
+import {TimelineProps} from '../timeline';
 
-export interface TableRowProps extends AppState{
+export interface TableRowProps extends TimelineProps{
   item: WordInfo,
   // emitter: EventEmitter,
 }
@@ -36,6 +37,7 @@ interface ReduxTableRowProps extends TableRowProps {
 export interface TableRowState {
   deleteDialogFlag: boolean;
   addFolderDialog: boolean;
+  selectedId: string;
 } 
 
 //TODO 画像も表示する
@@ -46,6 +48,7 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
     this.state = {
       deleteDialogFlag: false,
       addFolderDialog: false,
+      selectedId: null,
     }
 
   }
@@ -55,16 +58,17 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
   // }
 
   onAddMyList() {
-    console.log('onAddMyList');
     this.setState({addFolderDialog: true});
   }
 
-  onSelectList(e, selected) {
-    console.log('selected', selected);
+  onSelectList(selected) {
+    this.setState({selectedId: selected})
   }
 
   onSelectedAddMyList() {
     console.log('onSelectedAddMyList');
+    //fb-
+    this.props.fb.addMylist(this.props.profile, this.state.selectedId, this.props.item.id);
   }
 
   // onLike() {
@@ -189,23 +193,6 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
       </div>
     );
 
-    const radios = [];
-    for (let i = 0; i < 30; i++) {
-      radios.push(
-        <RadioButton
-          key={i}
-          value={`value${i + 1}`}
-          label={`Option ${i + 1}`}
-          style={styles.radioButton}
-        />
-      );
-    }
-    const radioGroup = (
-      <RadioButtonGroup name="shipSpeed" onChange={this.onSelectList.bind(this)} defaultSelected="not_light">
-        {radios}
-      </RadioButtonGroup> 
-    );
-
     const dialogs = (
       <div>
         <div>
@@ -220,15 +207,12 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
           />
         </div>
         <div id='AddMyListDialog'>
-          <DialogBox
-            title="Select"
-            message={radioGroup}
-            flag={this.state.addFolderDialog}
-            onOK={this.onSelectedAddMyList.bind(this)}
-            onCancel={()=>{
-              this.setState({addFolderDialog: false})
-            }}
-          />
+          {addMylistDialog(this.state.addFolderDialog, 
+          this.props.mylist,
+          (id)=>{ this.onSelectList(id); },
+          ()=>{ this.onSelectedAddMyList(); this.setState({addFolderDialog: false}); },
+          ()=>{ this.setState({addFolderDialog: false}); }
+          )}
         </div>
       </div>
     );
@@ -259,5 +243,18 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
   }
 }
 
-export default connect()(TableRow);
+const mapStateToProps = (state) => {
+  return ({
+    mylist: state.mylist
+  });
+};
+
+const mapDispatchToProps = {};
+
+const RTableRow = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(TableRow);
+
+export default connect()(RTableRow);
 
