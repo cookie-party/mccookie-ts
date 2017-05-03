@@ -8,9 +8,9 @@ import {WordInfo, Styles} from './common';
 import {MainState} from './main';
 
 export enum ETimeline {
-  HOME = 1,
+  LIST = 1,
+  HOME,
   USER,
-  LIST,
 }
 export interface TimelineState {
 }

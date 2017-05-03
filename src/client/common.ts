@@ -9,6 +9,7 @@ export interface Styles {
   timeline?: React.CSSProperties,
   icon?: React.CSSProperties,
   smallIcon?: React.CSSProperties,
+  tabs?: React.CSSProperties,
 }
 
 export interface OauthInfo {

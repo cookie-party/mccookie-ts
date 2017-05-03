@@ -27,6 +27,8 @@ import {MainState} from '../main';
 
 import {ETimeline} from '../timeline';
 import {removeList} from '../redux/mylistAction';
+import {Mylist} from '../common';
+import ProfileIcon from './ProfileIcon';
 
 export interface TableRowProps extends MainState{
   item: WordInfo,
@@ -34,7 +36,8 @@ export interface TableRowProps extends MainState{
 }
 
 interface ReduxTableRowProps extends TableRowProps {
-  dispatch: Dispatch<any>
+  dispatch: Dispatch<any>,
+  mylist: Mylist[],
 }
 
 export interface TableRowState {
@@ -120,10 +123,6 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
         flexFlow: 'row wrap',
         justifyContent: 'center',
       },
-      icon: {
-        width: 50,
-        height: 50,
-      },
       username: {
         flexGrow: 3,
         fontSize: '12pt',
@@ -140,17 +139,10 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
         fontSize: '5pt',
         margin: 5,
       },
-      smallIcon: {
-        width: 20,
-        height: 20,
-        fill: '#42AFE3', //d0d8e5
-        cursor: 'pointer',
-      }, 
     };
 
     const item: WordInfo = this.props.item;
 
-    const icon = item.icon || '../../static/img/satomi.jpg';
     const username = item.userName || 'satomi';
     const userid = '@'+item.userId || '@satomi';
 
@@ -269,7 +261,7 @@ class TableRow extends React.Component<ReduxTableRowProps, TableRowState> {
           >
         <div style={styles.row}>
           <div style={{flexGrow: 0, margin: 10}}>
-            <img src={icon} style={styles.icon}/>
+            <ProfileIcon src={item.icon}/>
           </div>
           <div style={{flexGrow: 1, margin: 10}}>
             {content}

@@ -1,8 +1,12 @@
 import * as React from 'react';
+import {connect} from 'react-redux';
 import {RadioButton, RadioButtonGroup} from 'material-ui/RadioButton';
 import TextField from 'material-ui/TextField';
+import {List, ListItem} from 'material-ui/List';
 import DialogBox from './components/DialogBox';
 import {Mylist} from './common';
+import {MainState} from './main';
+import ProfileIcon from './components/ProfileIcon';
 
 const styles = {};
 
@@ -51,3 +55,72 @@ export function addMylistDialog(addFolderDialog: boolean, mylist: Mylist[], sele
     />
   );
 }
+
+export interface MylistViewProps extends MainState{
+  mylist: Mylist[],
+  onSelectMylist: (idx: number)=>void,
+}
+
+class _MylistView extends React.Component<MylistViewProps, any>{
+  constructor(props, state) {
+    super(props,state);
+  }
+
+  render() {
+    const styles = {
+      list: {
+        //display: 'flex',
+        //margin: 'auto',
+        // verticalAlign: 'center',
+      },
+      listitem: {
+        width: '90%',
+        height: 100,
+        color: '#FFee33',
+        margin: 'auto',
+        fontSize: 20,
+      },
+      itemBox: {
+        display: 'flex', 
+        height: 80, 
+        backgroundColor: '#ffbb88'
+      }
+    }
+
+    let listItems = this.props.mylist.map((item, i) => {
+      return (
+        <ListItem onClick={()=>{ this.props.onSelectMylist(i); } } key={item.id} style={styles.listitem} >
+          <div style={styles.itemBox}>
+            <div style={{margin: 10}}>
+              <ProfileIcon src={this.props.profile.photoURL}/>
+            </div>
+            <div style={{margin: 10}}>
+              {item.name}
+            </div>
+          </div>
+        </ListItem>
+      );
+    });
+
+    return (
+      <List style={styles.list}>
+        {listItems}
+      </List>
+    );
+  }
+}
+
+const mapStateToProps = (state) => {
+  return ({
+    mylist: state.mylist
+  });
+};
+
+const mapDispatchToProps = {};
+
+const RMylistView = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(_MylistView);
+
+export const MylistView = connect()(RMylistView);

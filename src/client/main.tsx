@@ -9,6 +9,8 @@ import * as React from 'react';
 import * as injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 
+import * as _ from 'underscore';
+
 import {connect} from 'react-redux';
 import {Dispatch} from 'redux';
 
@@ -24,6 +26,8 @@ import {Tabs, Tab} from 'material-ui/Tabs';
 import HomeIcon from 'material-ui/svg-icons/action/home';
 import PersonIcon from 'material-ui/svg-icons/social/person';
 import ListIcon from 'material-ui/svg-icons/action/dns';
+import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
+import ArrowForward from 'material-ui/svg-icons/navigation/arrow-forward';
 
 import * as API from './util/api';
 
@@ -38,9 +42,10 @@ import {IWordList, WordInfo, KeyValueItem, Mylist, UserProfile, Styles} from './
 import Constant from './constant';
 import FirebaseWrapper from './firebaseWrapper';
 
+import IconView from './components/IconView';
 import {homeTimeline, userTimeline, userTimelineWithTw, selectList} from './redux/wordListAction';
 import {mylist, createList} from './redux/mylistAction';
-import {createMylistDialog} from './mylists';
+import {createMylistDialog, MylistView} from './mylists';
 
 enum Status {
   close,
@@ -56,7 +61,6 @@ export interface MainState {
   contents: number,
   wordList: IWordList,
   showWordList: number,
-  mylist: Mylist[],
   listId: string,
   searchWord: string,
   createMylistDialogFlag: boolean,
@@ -68,23 +72,15 @@ export interface MainProps extends AppState {
   mylist: Mylist[],
 }
 
+let previousStates: MainState[] = [];
+let backflag = false;
+
 class Main extends React.Component<MainProps, MainState>{
   constructor(props: MainProps, state: MainState){
     super(props, state);
 
     // window.userId = this.userId; //TODO windowに入れない方がいいような気もする
     // window.userInfo = this.props.profile;
-
-    const defaultWordList = [{
-      id: '0',
-      key: '覚えたい単語',
-      value: '覚えたい意味',
-      userId: null,
-      userName: null,
-      icon: null,
-      createDate: +new Date('1989-01-01 00:00:00'),
-      updateDate: +new Date('1989-01-01 00:00:00'),
-    }];
 
     this.state = {
       dispatch: this.props.dispatch,
@@ -97,14 +93,13 @@ class Main extends React.Component<MainProps, MainState>{
         user: [],
         list: [],
       },
-      mylist: this.props.mylist,
       listId: null,
-      showWordList: ETimeline.HOME,
+      showWordList: ETimeline.LIST,
       searchWord: '',
       onAddMylist: ()=>{},
       createMylistDialogFlag: false,
     };
-
+    
   }
 
   componentDidMount() {
@@ -146,9 +141,22 @@ class Main extends React.Component<MainProps, MainState>{
 
   }
 
+  componentWillUpdate(p, nextState) {
+    if(!backflag && this.state.status === Status.opened) {
+      if(previousStates.length > 10) {
+        previousStates.shift();
+      }
+      previousStates.push(this.state);
+      console.log('state: ', {prev: previousStates, next: nextState});
+    }
+    else {
+      backflag = false;
+    }
+  }
+
   handleTop() {
-    //ユーザ情報取得
-    this.setState({contents: 0});
+    //TODO reload?
+    location.reload();
   }
   handleLogout() {
     this.props.onLogout(this.state.profile.id);
@@ -190,6 +198,9 @@ class Main extends React.Component<MainProps, MainState>{
         this.props.dispatch(selectList(wordInfoList));
         this.setState({status: Status.opened, listId: list.id, showWordList: ETimeline.LIST});
       }).catch((err) => console.log(err));
+    }
+    else {
+      this.setState({listId: null});
     }
   }
 
@@ -256,21 +267,15 @@ class Main extends React.Component<MainProps, MainState>{
         justifyContent: 'center',
         width: '90%',
       },
+      tabs: {
+        width: '80%',
+      },
     };
 
-    const mylistMenuItems: Array<any> = this.props.mylist.map((list, i) => {
-      return <MenuItem key={i} primaryText={list.name} onClick={this.onSelectMylist.bind(this, i)} />;
-    });
-
-    const titleBar = (
-      <div style={styles.row}>
-        <div style={{width: 250, height: 40, display: 'flex', justifyContent: 'space-around'}}>
-          <img src='../static/img/title_logo.png' style={{cursor: 'pointer'}} width='70%' onTouchTap={this.handleTop.bind(this)}/>
-        </div>
-        <div>
-          <SearchBox {...this.state}/>
-        </div>
-        <div style={{width: 150, display: 'flex'}}>
+    /**
+      const mylistMenuItems: Array<any> = this.props.mylist.map((list, i) => {
+        return <MenuItem key={i} primaryText={list.name} onClick={this.onSelectMylist.bind(this, i)} />;
+      });
           <div style={{display: 'flex',  justifyContent: 'center', flexDirection: 'column',}}>
             <IconMenu
             iconButtonElement={<IconButton><FolderIcon style={{cursor: 'pointer'}}/></IconButton>}
@@ -281,6 +286,26 @@ class Main extends React.Component<MainProps, MainState>{
               <MenuItem key={-1} primaryText='Add Mylist' onClick={this.onAddMylist.bind(this)} />
             </IconMenu>
           </div>
+     */
+
+//          <SearchBox {...this.state}/>
+
+    const backAndForward = previousStates.length > 0 ?
+    (
+      <div style={styles.row}>
+        <IconView icon={ArrowBack} onClick={()=>{backflag=true; this.setState(previousStates.pop());}} style={{width: 36, height: 36, cursor: 'pointer'}}/>
+      </div>
+    ) : <div/>;
+
+    const titleBar = (
+      <div style={styles.row}>
+        <div style={{margin: 10}}>
+          {backAndForward}
+        </div>
+        <div style={{width: 250, height: 40, display: 'flex', justifyContent: 'space-around'}}>
+          <img src='../static/img/title_logo.png' style={{cursor: 'pointer'}} width='70%' onTouchTap={this.handleTop.bind(this)}/>
+        </div>
+        <div style={{width: 100, display: 'flex'}}>
           <div style={{margin: 10}}>
             <IconMenu
             iconButtonElement={<IconButton><FaceIcon /></IconButton>}
@@ -295,6 +320,8 @@ class Main extends React.Component<MainProps, MainState>{
       </div>
     );
 
+    let mylistView = this.state.listId ? <Timeline {...this.state} /> : <MylistView onSelectMylist={this.onSelectMylist.bind(this)} {...this.state}/>;
+
     let page = <CircularProgress/>;
     if(this.state.status === Status.opened) {
       if(this.state.contents === 0){
@@ -304,14 +331,14 @@ class Main extends React.Component<MainProps, MainState>{
               <Register {...this.state}/>
             </div>
             <div style={styles.timeline}>
-              <Tabs inkBarStyle={{background: '#dd5500'}}>
-                <Tab onActive={this.onSelectTab.bind(this, ETimeline.HOME)} key={ETimeline.HOME} icon={<HomeIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+              <Tabs style={styles.tabs} inkBarStyle={{background: '#dd5500'}}>
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.LIST)} key={ETimeline.LIST} icon={<ListIcon>List</ListIcon>} label={'List'} style={{backgroundColor: '#fcdd6f'}} >
+                  {mylistView}
+                </Tab>
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.HOME)} key={ETimeline.HOME} icon={<HomeIcon>Home</HomeIcon>} label={'Home'} style={{backgroundColor: '#fcdd6f'}} >
                   <Timeline {...this.state} />
                 </Tab>
-                <Tab onActive={this.onSelectTab.bind(this, ETimeline.USER)} key={ETimeline.USER}icon={<PersonIcon/>} style={{backgroundColor: '#fcdd6f'}} >
-                  <Timeline {...this.state} />
-                </Tab>
-                <Tab onActive={this.onSelectTab.bind(this, ETimeline.LIST)} key={ETimeline.LIST} icon={<ListIcon/>} style={{backgroundColor: '#fcdd6f'}} >
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.USER)} key={ETimeline.USER}icon={<PersonIcon>User</PersonIcon>} label={'User'} style={{backgroundColor: '#fcdd6f'}} >
                   <Timeline {...this.state} />
                 </Tab>
               </Tabs>
