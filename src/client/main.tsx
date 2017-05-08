@@ -9,7 +9,10 @@ import * as React from 'react';
 import * as injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 
-import {EventEmitter} from 'eventemitter3';
+import * as _ from 'underscore';
+
+import {connect} from 'react-redux';
+import {Dispatch} from 'redux';
 
 import IconButton from 'material-ui/IconButton';
 import IconMenu from 'material-ui/IconMenu';
@@ -19,249 +22,192 @@ import FaceIcon from 'material-ui/svg-icons/action/face';
 import FolderIcon from 'material-ui/svg-icons/file/folder';
 import Paper from 'material-ui/Paper';
 import CircularProgress from 'material-ui/CircularProgress';
+import {Tabs, Tab} from 'material-ui/Tabs';
+import HomeIcon from 'material-ui/svg-icons/action/home';
+import PersonIcon from 'material-ui/svg-icons/social/person';
+import ListIcon from 'material-ui/svg-icons/action/dns';
+import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
+import ArrowForward from 'material-ui/svg-icons/navigation/arrow-forward';
 
 import * as API from './util/api';
 
-// import MyProfile from './myprof';
-// import AddMylistDialog from './components/AddMylistDialog';
 // import MyList from './mylist';
-// import NewList from './newlist';
-
 import Register from './register';
 import Timeline from './timeline';
+import {ETimeline} from './timeline';
 import SearchBox from './components/SearchBox';
-import DialogBox from './components/DialogBox';
 
 import {AppState} from './app';
-import {WordInfo, KeyValueItem, UserProfile, Styles} from './common';
+import {IWordList, WordInfo, KeyValueItem, Mylist, UserProfile, Styles} from './common';
 import Constant from './constant';
+import FirebaseWrapper from './firebaseWrapper';
+
+import IconView from './components/IconView';
+import {homeTimeline, userTimeline, userTimelineWithTw, selectList} from './redux/wordListAction';
+import {mylist, createList} from './redux/mylistAction';
+import {createMylistDialog, MylistView} from './mylists';
+
+enum Status {
+  close,
+  opening,
+  opened
+}
 
 export interface MainState {
-  emitter: EventEmitter,
-  contents: number,
-  wordList: WordInfo[],
-  searchWord: string,
+  dispatch: Dispatch<any>,
   profile: UserProfile,
-  database: firebase.database.Database,
-  deleteDialogFlag: boolean,
-  addmylistDialogFlag: boolean,
-  onDeleteItem: ()=>void,
+  fb: FirebaseWrapper,
+  status: number,
+  contents: number,
+  wordList: IWordList,
+  showWordList: number,
+  listId: string,
+  searchWord: string,
+  createMylistDialogFlag: boolean,
   onAddMylist: ()=>void,
 }
 
-export default class Main extends React.Component<AppState, MainState>{
-  constructor(props: AppState, state: MainState){
+export interface MainProps extends AppState {
+  dispatch: Dispatch<any>,
+  mylist: Mylist[],
+}
+
+let previousStates: MainState[] = [];
+let backflag = false;
+
+class Main extends React.Component<MainProps, MainState>{
+  constructor(props: MainProps, state: MainState){
     super(props, state);
-    const emitter: EventEmitter = new EventEmitter();
+
     // window.userId = this.userId; //TODO windowに入れない方がいいような気もする
     // window.userInfo = this.props.profile;
 
     this.state = {
-      emitter,
-      contents: -1,
-      wordList: [{
-        id: '0',
-        key: '覚えたい単語',
-        value: '覚えたい意味',
-        userId: null,
-        userName: null,
-        icon: null,
-        createDate: +new Date('1989-01-01 00:00:00'),
-        updateDate: +new Date('1989-01-01 00:00:00'),
-      }],
-      searchWord: '',
+      dispatch: this.props.dispatch,
       profile: this.props.profile,
-      database: null,
-      onDeleteItem: ()=>{},
+      fb: this.props.fb,
+      status: Status.close,
+      contents: -1,
+      wordList: {
+        home: [],
+        user: [],
+        list: [],
+      },
+      listId: null,
+      showWordList: ETimeline.LIST,
+      searchWord: '',
       onAddMylist: ()=>{},
-      deleteDialogFlag: false,
-      addmylistDialogFlag: false,
+      createMylistDialogFlag: false,
     };
-
-    this.state.emitter.on('cookieRegister', (kv: KeyValueItem)=>{
-      // console.log('register profile', this.props.profile);
-
-      if(this.props.profile.provider === 'twitter.com') {
-        const kvtext: string = kv.key + Constant.SEPARATOR + kv.value + Constant.SEPARATOR + Constant.HASHTAG;
-        API.postTweet(kvtext)
-        .then((response: any)=>{
-          // console.log('response',response);
-          if(response && response.statusCode === 200) {
-            console.log('success!');
-            location.reload();
-          }
-        }).catch((err: string)=>{
-          console.log(err);
-        });
-      }
-      else if(this.props.profile.provider === 'firebase') {
-        const testUserPath: string = 'users/'+this.props.profile.id+'/';
-        const keyid: string = this.state.database.ref().child(testUserPath).push().key;
-        const newData: WordInfo = {
-          id: keyid,
-          key: kv.key,
-          value: kv.value,
-          userId: this.state.profile.id,
-          userName: this.state.profile.displayName,
-          icon: this.state.profile.photoURL,
-          createDate: +new Date(),
-          updateDate: +new Date(),        
-        };
-        this.state.database.ref(testUserPath + keyid).set(newData)
-        .then((res) => {
-          console.log(res);
-        }).catch((err) => {
-          console.log(err);
-        });
-      }
-
-    }).on('cookieSearch', (searchWord: string)=> {
-      this.setState({searchWord});
-
-    }).on('cookieItemDelete', (id: string)=> {
-      //delete
-      const wordlist: WordInfo[] = this.state.wordList;
-      let deleteIdx: number = null, target: WordInfo = null;
-      wordlist.forEach((w: WordInfo, i: number)=>{
-        if(w.id === id){
-          deleteIdx = i;
-          target = w;
-          target.value = null;
-          target.updateDate = +new Date();
-        }
-      });
-      if(typeof deleteIdx === 'number'){
-        this.setState({
-          deleteDialogFlag: true,
-          onDeleteItem: ()=>{
-            wordlist.splice(deleteIdx, 1);
-
-            if(this.props.profile.provider === 'twitter.com') {
-              API.deleteItem(id).then(()=>{
-                this.setState({wordList: wordlist, deleteDialogFlag: false});
-              }).catch((err)=>{
-                alert(err);
-                this.setState({deleteDialogFlag: false});
-              });
-            }
-            else if(this.props.profile.provider === 'firebase'){
-              this.props.fb.database().ref('/users/'+this.props.profile.id)
-              .set(target)
-              .then((result) => {
-                console.log(result);
-                this.setState({wordList: wordlist, deleteDialogFlag: false});
-              })
-              .catch((err) => {
-                console.log(err);
-                alert(err);
-                this.setState({deleteDialogFlag: false});
-              });
-            }
-
-          }
-        });
-      }
-    });
-
+    
   }
 
   componentDidMount() {
     // firebase Database
-    const fbDB: firebase.database.Database = this.props.fb.database();
     this.setState({
       contents: 0,
-      database: fbDB,
+      status: Status.opening,
     });
 
     let wordList: WordInfo[] = [];
 
-    //mccookite db data
-    const mcctestRef: firebase.database.Reference = fbDB.ref('users/mcctest');
-    mcctestRef.once('value', (snapshot) => {
-      const values: any = snapshot.val();
-      if(values) {
-        const vKeyids: string[] = Object.keys(values);
-        const preWordList: WordInfo[] = this.state.wordList;
-        const nextWordList: WordInfo[] = vKeyids.map((keyid) => {
-          return values[keyid];
-        });
-
-        wordList = preWordList.concat(nextWordList)
-        .sort((w1: WordInfo, w2: WordInfo)=>w2.updateDate - w1.updateDate);
-
-        this.setState({wordList: wordList});
+    const fb = this.props.fb;
+    fb.getDefaults().then((vals)=>{
+      this.props.dispatch(homeTimeline(vals));
+      return fb.getUserData(this.state.profile);
+    }).then((vals)=>{
+      //ユーザタイムライン
+      this.props.dispatch(userTimeline(vals));
+      return fb.getMylist(this.state.profile);
+    }).then((mylists)=>{
+      if(mylists && mylists.length > 0) {
+        this.props.dispatch(mylist(mylists));
       }
-
-      //ユーザ情報取得
-      if(this.state.profile.provider === 'twitter.com') {
-        API.getUserTimeline()
-        .then((response: API.TweetInfo[])=>{
-          if(response){
-            const preWordList: WordInfo[] = this.state.wordList;
-            const nextWordList: WordInfo[] = response
-            .filter((v)=>{
-              return v.text.indexOf(Constant.HASHTAG) > 0 && v.text.indexOf(Constant.ATTMARK) !== 0;
-            })
-            .map((v)=>{
-              const keyValues = v.text.split(Constant.SEPARATOR);
-              return {
-                id: v.id_str,
-                key: keyValues[0],
-                value: keyValues[1],
-                userId: v.user.name,
-                userName: v.user.screen_name,
-                icon: v.user.profile_image_url,
-                createDate: +new Date(v.created_at),
-                updateDate: +new Date(v.created_at),
-              };
-            });
-            wordList = preWordList.concat(nextWordList)
-            .sort((w1: WordInfo, w2: WordInfo)=>w2.updateDate - w1.updateDate);
-            this.setState({wordList: wordList});
-          }
-        }).catch((err)=>{
-          console.log(err);
-        });
-
-      } else if(this.state.profile.provider === 'firebase') {
-        //TODO my wordlist
-        const mcctestRef: firebase.database.Reference = fbDB.ref('users/' + this.state.profile.id);
-        mcctestRef.on('value', (snapshot) => {
-          const values: any = snapshot.val();
-          if(values) {
-            const vKeyids: string[] = Object.keys(values);
-            const preWordList: WordInfo[] = this.state.wordList;
-            const nextWordList: WordInfo[] = vKeyids
-            .filter((kid) => {
-              let _notExist: boolean = true;
-              preWordList.forEach((w: WordInfo) => {
-                if(w.id === kid) {
-                  _notExist = false;
-                }
-              });
-              return _notExist;
-            })
-            .map((keyid) => {
-              return values[keyid];
-            });
-            wordList = preWordList.concat(nextWordList)
-            .sort((w1: WordInfo, w2: WordInfo)=>w2.updateDate - w1.updateDate);
-            this.setState({wordList: wordList});
-          }
-        });
-      }
-
+      this.setState({status: Status.opened});
     });
+
+    if(this.state.profile.provider === 'twitter.com') {
+      this.setState({status: Status.opening});
+      API.getHomeTimeline().then((response: API.TweetInfo[])=>{
+        this.props.dispatch(userTimelineWithTw(response));
+        this.setState({status: Status.opened});
+        //TODO ツイッターのリスト使う？
+      }).catch((err)=>{
+        alert(err);
+        console.log(err);
+        this.setState({status: Status.close});
+      });
+    }
+
+  }
+
+  componentWillUpdate(p, nextState) {
+    if(!backflag && this.state.status === Status.opened) {
+      if(previousStates.length > 10) {
+        previousStates.shift();
+      }
+      previousStates.push(this.state);
+      console.log('state: ', {prev: previousStates, next: nextState});
+    }
+    else {
+      backflag = false;
+    }
   }
 
   handleTop() {
-    //ユーザ情報取得
-    this.setState({contents: 0});
+    //TODO reload?
+    location.reload();
   }
   handleLogout() {
     this.props.onLogout(this.state.profile.id);
   }
 
+  onAddMylist() {
+    this.setState({createMylistDialogFlag: true});
+  }
+  onAddedMylist(name: string) {
+    if(name) {
+      //fb.add
+      const listId = this.props.fb.generateListId(this.props.profile);
+      const mylist: Mylist = {
+        id: listId,
+        name,
+        words: []
+      };
+      this.props.fb.setMylist(this.props.profile, listId, mylist)
+      .then((value) => {
+        //redux-action
+        this.props.dispatch(createList(mylist));
+        this.setState({createMylistDialogFlag: false});
+      }).catch((error)=>{
+        alert(error.message);
+        this.setState({createMylistDialogFlag: false});
+      });
+    }
+    else {
+      this.setState({createMylistDialogFlag: false});
+    }
+  }
+  onSelectMylist(idx) {
+    //redux-action
+    const list = this.props.mylist[idx];
+    if(list && list.words && list.words.length > 0){
+      this.setState({status: Status.opening});
+      this.props.fb.getItemWithIdList(list.words)
+      .then((wordInfoList: WordInfo[])=>{
+        this.props.dispatch(selectList(wordInfoList));
+        this.setState({status: Status.opened, listId: list.id, showWordList: ETimeline.LIST});
+      }).catch((err) => console.log(err));
+    }
+    else {
+      this.setState({listId: null});
+    }
+  }
+
+  onSelectTab(key) {
+    this.setState({showWordList: key});
+  }
+  
   render() {
     const styles: Styles = {
       column: {
@@ -321,20 +267,45 @@ export default class Main extends React.Component<AppState, MainState>{
         justifyContent: 'center',
         width: '90%',
       },
+      tabs: {
+        width: '80%',
+      },
     };
+
+    /**
+      const mylistMenuItems: Array<any> = this.props.mylist.map((list, i) => {
+        return <MenuItem key={i} primaryText={list.name} onClick={this.onSelectMylist.bind(this, i)} />;
+      });
+          <div style={{display: 'flex',  justifyContent: 'center', flexDirection: 'column',}}>
+            <IconMenu
+            iconButtonElement={<IconButton><FolderIcon style={{cursor: 'pointer'}}/></IconButton>}
+            anchorOrigin={{horizontal: 'left', vertical: 'top'}}
+            targetOrigin={{horizontal: 'left', vertical: 'top'}}
+            >
+              {mylistMenuItems}
+              <MenuItem key={-1} primaryText='Add Mylist' onClick={this.onAddMylist.bind(this)} />
+            </IconMenu>
+          </div>
+     */
+
+//          <SearchBox {...this.state}/>
+
+    const backAndForward = previousStates.length > 0 ?
+    (
+      <div style={styles.row}>
+        <IconView icon={ArrowBack} onClick={()=>{backflag=true; this.setState(previousStates.pop());}} style={{width: 36, height: 36, cursor: 'pointer'}}/>
+      </div>
+    ) : <div/>;
 
     const titleBar = (
       <div style={styles.row}>
+        <div style={{margin: 10}}>
+          {backAndForward}
+        </div>
         <div style={{width: 250, height: 40, display: 'flex', justifyContent: 'space-around'}}>
           <img src='../static/img/title_logo.png' style={{cursor: 'pointer'}} width='70%' onTouchTap={this.handleTop.bind(this)}/>
         </div>
-        <div>
-          <SearchBox {...this.state}/>
-        </div>
-        <div style={{width: 150, display: 'flex'}}>
-          <div style={{display: 'flex',  justifyContent: 'center', flexDirection: 'column',}}>
-            <FolderIcon style={{cursor: 'pointer'}}/>
-          </div>
+        <div style={{width: 100, display: 'flex'}}>
           <div style={{margin: 10}}>
             <IconMenu
             iconButtonElement={<IconButton><FaceIcon /></IconButton>}
@@ -349,46 +320,42 @@ export default class Main extends React.Component<AppState, MainState>{
       </div>
     );
 
-    let page = <CircularProgress/>;
-    if(this.state.contents === 0){
-      page = (
-        <div style={styles.mainTable}>
-          <div style={styles.register}>
-            <Register {...this.state}/>
-          </div>
-          <div style={styles.timeline}>
-            <Timeline {...this.state}/>
-          </div>
-        </div>
-      );
-    }
-    else if(this.state.contents === 1){
-      // page = <MyProfile {...this.state}/>;
-    }
-    else if(this.state.contents === 2){
-      // page = <MyList {...this.state}/>;
-    }
-    else if(this.state.contents === 3){
-      // page = <NewList {...this.state} />;
-    }
+    let mylistView = this.state.listId ? <Timeline {...this.state} /> : <MylistView onSelectMylist={this.onSelectMylist.bind(this)} {...this.state}/>;
 
-    const dialogs = (
-      <div>
-        <div>
-          <DialogBox
-            title={'Delete Item'}
-            message={'単語を削除しますか？'}
-            flag={this.state.deleteDialogFlag}
-            onOK={this.state.onDeleteItem.bind(this)}
-            onCancel={()=>{
-              this.setState({deleteDialogFlag: false});
-            }}
-          />
-        </div>
-        <div id='AddMyListDialog'>
-        </div>
-      </div>
-    );
+    let page = <CircularProgress/>;
+    if(this.state.status === Status.opened) {
+      if(this.state.contents === 0){
+        page = (
+          <div style={styles.mainTable}>
+            <div style={styles.register}>
+              <Register {...this.state}/>
+            </div>
+            <div style={styles.timeline}>
+              <Tabs style={styles.tabs} inkBarStyle={{background: '#dd5500'}}>
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.LIST)} key={ETimeline.LIST} icon={<ListIcon>List</ListIcon>} label={'List'} style={{backgroundColor: '#fcdd6f'}} >
+                  {mylistView}
+                </Tab>
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.HOME)} key={ETimeline.HOME} icon={<HomeIcon>Home</HomeIcon>} label={'Home'} style={{backgroundColor: '#fcdd6f'}} >
+                  <Timeline {...this.state} />
+                </Tab>
+                <Tab onActive={this.onSelectTab.bind(this, ETimeline.USER)} key={ETimeline.USER}icon={<PersonIcon>User</PersonIcon>} label={'User'} style={{backgroundColor: '#fcdd6f'}} >
+                  <Timeline {...this.state} />
+                </Tab>
+              </Tabs>
+            </div>
+          </div>
+        );
+      }
+      else if(this.state.contents === 1){
+        // page = <MyProfile {...this.state}/>;
+      }
+      else if(this.state.contents === 2){
+        // page = <MyList {...this.state}/>;
+      }
+      else if(this.state.contents === 3){
+        // page = <NewList {...this.state} />;
+      }
+    }
 
     return (
       <div>
@@ -402,9 +369,8 @@ export default class Main extends React.Component<AppState, MainState>{
             {page}
           </div>
 
-          <div>
-            {dialogs}
-          </div>
+          {createMylistDialog(this.state.createMylistDialogFlag, 
+          this.onAddedMylist.bind(this) )}
 
         </div>
       </div>
@@ -412,3 +378,17 @@ export default class Main extends React.Component<AppState, MainState>{
   }
 }
 
+const mapStateToProps = (state) => {
+  return ({
+    mylist: state.mylist
+  });
+};
+
+const mapDispatchToProps = {};
+
+const RMain = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(Main);
+
+export default connect()(RMain);

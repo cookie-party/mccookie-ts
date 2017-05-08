@@ -9,6 +9,7 @@ export interface Styles {
   timeline?: React.CSSProperties,
   icon?: React.CSSProperties,
   smallIcon?: React.CSSProperties,
+  tabs?: React.CSSProperties,
 }
 
 export interface OauthInfo {
@@ -35,8 +36,20 @@ export interface WordInfo {
   updateDate: number,
 }
 
+export interface IWordList {
+  home: WordInfo[],
+  user: WordInfo[],
+  list: WordInfo[],
+}
+
 export interface KeyValueItem {
   key: string,
   value: string,
+}
+
+export interface Mylist {
+  id: string,
+  name: string,
+  words: string[],
 }
 

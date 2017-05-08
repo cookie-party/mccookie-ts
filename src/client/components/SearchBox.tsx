@@ -10,7 +10,7 @@ export default class SeachBox extends React.Component<MainState, SearchBoxState>
   }
 
   onChangeSearchWord(e) {
-    this.props.emitter.emit('cookieSearch', e.target.value);
+    // this.props.emitter.emit('cookieSearch', e.target.value);
   }
 
   render() {
@@ -19,13 +19,17 @@ export default class SeachBox extends React.Component<MainState, SearchBoxState>
       justifyContent: 'center',
     };
     return (
+      <div/>
+    );
+  }
+
+}
+
+/**
       <div style={style}>
         <TextField
           hintText="検索"
           onChange={this.onChangeSearchWord.bind(this)}
         />
       </div>
-    );
-  }
-
-}
+ */

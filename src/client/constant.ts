@@ -1,5 +1,5 @@
 export default {
-  SEPARATOR: ' /// ',
+  SEPARATOR: ' / ',
   HASHTAG: '#くーこれ',
   ATTMARK: '@',
 };

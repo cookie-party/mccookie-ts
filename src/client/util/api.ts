@@ -61,6 +61,17 @@ export function getUserTimeline() {
   });
 }
 
+export function getHomeTimeline() {
+  return new Promise((resolve, reject)=>{
+    //console.log('getCredentials');
+    request
+      .get(prefixurl+'twitter/statuses/homeTimeline')
+      .end((err: string, res: request.Response)=>{
+        sifting(err, res).then(resolve).catch(reject);
+      });
+  });
+}
+
 export function postTweet(text) {
   return new Promise((resolve, reject)=>{
     //console.log('postTweet',text);

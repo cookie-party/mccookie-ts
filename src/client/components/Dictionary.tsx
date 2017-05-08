@@ -14,7 +14,7 @@ export interface DictionaryProps {
 }
 
 export interface Cached {
-  // TODO
+  [searchWord: string]: string[]
 }
 export interface DictionaryState {
   searching: boolean,
@@ -62,6 +62,9 @@ export default class Dictionary extends React.Component<DictionaryProps, Diction
           means = this.cutMeans(response.meaning);
           cached[searchWord] = means;
           this.props.onSearched({target:{value: means[0]}});
+        }
+        else {
+          this.props.onSearched({target:{value: ''}});
         }
         this.setState({means: means, meaning: means[0], meaningsAll: response.meaning, cached, searching: false});
       }).catch((err)=>{

@@ -1,12 +1,13 @@
 import * as React from 'react';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
+import FirebaseWrapper from './firebaseWrapper';
 import {UserProfile, Styles} from './common';
 import * as API from './util/api';
 
 export interface AuthProps {
-  fb: firebase.app.App,
-  tp: firebase.auth.TwitterAuthProvider,
+  fb: FirebaseWrapper,
+  // tp: firebase.auth.TwitterAuthProvider,
   onLogin: (profile: UserProfile)=>void,
   onLogout: (userId: string)=>void,
 }
@@ -15,6 +16,12 @@ export interface AuthState {
   password: string,
 }
 
+/**
+ * Firebaseログイン
+ * Twitterアカウントと紐づけてTwitter連携（自動投稿）する場合は、
+ * Twitterログインにしてもらう
+ * TODO Twitterログインはするけど投稿は許可しないモードをつけたほうがいいかも？
+ */
 export default class Auth extends React.Component<AuthProps, AuthState>{
   constructor(props, state){
     super(props, state);
@@ -60,26 +67,20 @@ export default class Auth extends React.Component<AuthProps, AuthState>{
       authPass = this.state.password;
     }
 
-    const firebase: firebase.app.App = this.props.fb;
     // 既存ユーザーのログイン機能
-    firebase.auth().signInWithEmailAndPassword(authEmail, authPass)
-    .then((ret)=>{
-      //console.log('logined '+JSON.stringify(ret));
-      const cUser: firebase.UserInfo = firebase.auth().currentUser;
+    this.props.fb.signIn(authEmail, authPass)
+    .then((cUser)=>{
       this.props.onLogin(this.userInfoToProfileInfo(cUser));
     })
     .catch((error) => {
-      alert('loginできません（' + error.message + '）');
+      alert('ログインできません（' + error.message + '）');
     });  
   }
 
   register() {
-    //console.log('register '+this.state.email+' '+this.state.password);
-    const firebase: firebase.app.App = this.props.fb;
     // 新規ユーザーを登録
-    firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password)
-    .then((result) => {
-      const cUser: firebase.UserInfo = firebase.auth().currentUser;
+    this.props.fb.register(this.state.email, this.state.password)
+    .then((cUser) => {
       this.props.onLogin(this.userInfoToProfileInfo(cUser));
     })
     .catch((error) => {
@@ -88,15 +89,14 @@ export default class Auth extends React.Component<AuthProps, AuthState>{
   }
 
   twitterAuth() {
-    //console.log('twitterAuth');
-    this.props.tp.setCustomParameters({
-      'lang': 'ja'
-    });
-    this.props.fb.auth().signInWithPopup(this.props.tp)
+    this.props.fb.signInWithTwitter()
     .then((result)=> {
-      const token = result.credential.accessToken;
-      const secret = result.credential.secret;
-      const cUser = result.user.providerData.length >= 0? result.user.providerData[0] : result.user;
+      let token, secret, cUser;
+      if(result && result.credential && result.user) {
+        token = result.credential.accessToken;
+        secret = result.credential.secret;
+        cUser = result.user.providerData.length >= 0? result.user.providerData[0] : result.user;
+      }
       return API.twitterAuthenticate(this.userInfoToProfileInfo(cUser), token, secret);
     }).then((response: {result: boolean, error: any, profile: UserProfile})=>{
       if(response.result) {
